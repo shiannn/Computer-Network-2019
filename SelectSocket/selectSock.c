@@ -135,10 +135,12 @@ int main(int argc , char *argv[])
 				(address.sin_port)); 
 		
 			//send new connection greeting message 
+            /*
 			if( send(new_socket, message, strlen(message), 0) != strlen(message) ) 
 			{ 
 				perror("send"); 
 			} 
+            */
 				
 			puts("Welcome message sent successfully"); 
 				
@@ -182,8 +184,23 @@ int main(int argc , char *argv[])
 				{ 
 					//set the string terminating NULL byte on the end 
 					//of the data read 
-					buffer[valread] = '\0'; 
-					send(sd , buffer , strlen(buffer) , 0 ); 
+					buffer[valread] = '\0';
+                    char response[1024]; 
+					//send(sd , buffer , strlen(buffer) , 0 ); 
+                    if(strcmp(buffer,"ls")==0){
+                        strcpy(response,"Got ls!");
+                        printf("response %s\n",response);
+                        send(sd , response , strlen(response) , 0 ); 
+                    }
+                    if(strcmp(buffer,"put")==0){
+            
+                    }
+                    if(strcmp(buffer,"get")==0){
+                        
+                    }
+                    if(strcmp(buffer,"play")==0){
+                        
+                    }
 				} 
 			} 
 		} 

@@ -46,6 +46,7 @@ int main(int argc , char *argv[])
     }
     char receiveMessage[BUFF_SIZE] = {};
     while(1){
+        /*
         bzero(receiveMessage,sizeof(char)*BUFF_SIZE);
         if ((recved = recv(localSocket,receiveMessage,sizeof(char)*BUFF_SIZE,0)) < 0){
             cout << "recv failed, with received bytes = " << recved << endl;
@@ -59,7 +60,29 @@ int main(int argc , char *argv[])
         char buffer[100] = "hello";
         send(localSocket , buffer , strlen(buffer) , 0 ); 
         //printf("%d:%s\n",recved,receiveMessage);
+        */
+        printf("here\n");
+        char command[10];
+        scanf("%s",command);
+        if(strcmp(command,"ls")==0){
+            send(localSocket , command , strlen(command) , 0 );     
+        }
+        else if(strcmp(command,"put")==0){
+            
+        }
+        else if(strcmp(command,"get")==0){
+            
+        }
+        else if(strcmp(command,"play")==0){
+            
+        }
 
+        char buffer[1024];
+        int valread;
+        if ((valread = read( localSocket , buffer, 1024)) > 0) { 
+            buffer[valread] = '\0';
+            printf("%s\n",buffer);
+		} 
     }
     printf("close Socket\n");
     close(localSocket);
