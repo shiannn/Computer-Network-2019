@@ -195,20 +195,34 @@ int main(int argc , char *argv[])
                         DIR *d;
                         struct dirent *dir;
                         d = opendir(".");
-                        int fileNumber = 0;
+						if (d) {
+							int32_t FileNumber = 0;
+							while ((dir = readdir(d)) != NULL) {
+								FileNumber += 1;
+							}
+							int32_t conv = htonl(FileNumber);
+							char *data = (char*)&conv;
+							write(sd, data,sizeof(conv));
+							closedir(d);
+						}
+						d = opendir(".");
                         if (d) {
                             while ((dir = readdir(d)) != NULL) {
-                                fileNumber += 1;
-                                //printf("%s\n", dir->d_name);
-                                //strcpy(response,dir->d_name);
+								int charNumber = strlen(dir->d_name);
+								//傳送數字(檔名bytes數)給client
+								int32_t conv = htonl(charNumber);
+								char *data = (char*)&conv;
+								write(sd, data,sizeof(conv));
+								strcpy(response,dir->d_name);
+								send(sd , response , strlen(response) , 0 ); 
                                 //send(sd , response , strlen(response) , 0 ); 
                             }
-                            sprintf(response,"%d",fileNumber);
-                            //printf("resNum %s\n",response);
-                            send(sd , response , strlen(response) , 0 ); 
-                            closedir(d);
+                            
+                            printf("resNum %s\n",response);
+                            //send(sd , response , strlen(response) , 0 ); 
+							closedir(d);
                         }
-                        
+						printf("done\n");
                         //list the directory
                         //send(sd , response , strlen(response) , 0 ); 
                     }
