@@ -65,10 +65,11 @@ int main(int argc , char *argv[])
         char command[10];
         scanf("%s",command);
         if(strcmp(command,"ls")==0){
-            send(localSocket , command , strlen(command) , 0 );     
+            send(localSocket , command , strlen(command) , 0 );
             char buffer[1024];
             read(localSocket,receiveMessage,BUFF_SIZE);
             printf("receive %s\n",receiveMessage);
+            send(localSocket , "GetIt" , strlen("GetIt") , 0 );
         }
         else if(strcmp(command,"put")==0){
             

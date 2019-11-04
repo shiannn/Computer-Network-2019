@@ -18,6 +18,7 @@
 #define PORT 8888 
 
 #define MaxResponse 1024
+#define max_clients 30
 
 void handle(int arg)
 {
@@ -29,15 +30,18 @@ int main(int argc , char *argv[])
 {   
     signal(SIGPIPE, handle);//避免client ctrl+c 時
 	int opt = TRUE; 
-	int master_socket , addrlen , new_socket , client_socket[30] , 
-		max_clients = 30 , activity, i , valread , sd; 
+	int master_socket , addrlen , new_socket , client_socket[max_clients] , 
+		activity, i , valread , sd; 
 	int max_sd; 
 	struct sockaddr_in address; 
 		
 	char buffer[1025]; //data buffer of 1K 
+
+	int isClientGetTheLast[max_clients] = {0};
 		
 	//set of socket descriptors 
 	fd_set readfds; 
+	fd_set writefds;
 		
 	//a message 
 	char *message = "ECHO Daemon v1.0 \r\n"; 
@@ -45,7 +49,7 @@ int main(int argc , char *argv[])
 	//initialise all client_socket[] to 0 so not checked 
 	for (i = 0; i < max_clients; i++) 
 	{ 
-		client_socket[i] = 0; 
+		client_socket[i] = 0;
 	} 
 		
 	//create a master socket 
@@ -91,10 +95,12 @@ int main(int argc , char *argv[])
 	while(TRUE) 
 	{ 
 		//clear the socket set 
-		FD_ZERO(&readfds); 
+		FD_ZERO(&readfds);
+		FD_ZERO(&writefds); 
 	
 		//add master socket to set 
-		FD_SET(master_socket, &readfds); 
+		FD_SET(master_socket, &readfds);
+		FD_SET(master_socket, &writefds); 
 		max_sd = master_socket; 
 			
 		//add child sockets to set 
@@ -105,7 +111,8 @@ int main(int argc , char *argv[])
 				
 			//if valid socket descriptor then add to read list 
 			if(sd > 0) 
-				FD_SET( sd , &readfds); 
+				FD_SET( sd , &readfds);
+				FD_SET( sd , &writefds);
 				
 			//highest file descriptor number, need it for the select function 
 			if(sd > max_sd) 
@@ -114,7 +121,7 @@ int main(int argc , char *argv[])
 	
 		//wait for an activity on one of the sockets , timeout is NULL , 
 		//so wait indefinitely 
-		activity = select( max_sd + 1 , &readfds , NULL , NULL , NULL); 
+		activity = select( max_sd + 1 , &readfds , &writefds , NULL , NULL); 
 	
 		if ((activity < 0) && (errno!=EINTR)) 
 		{ 
@@ -153,7 +160,8 @@ int main(int argc , char *argv[])
 				//if position is empty 
 				if( client_socket[i] == 0 ) 
 				{ 
-					client_socket[i] = new_socket; 
+					client_socket[i] = new_socket;
+					isClientGetTheLast[i] = 1;
 					printf("Adding to list of sockets as %d\n" , i); 
 						
 					break; 
@@ -179,7 +187,8 @@ int main(int argc , char *argv[])
 						
 					//Close the socket and mark as 0 in list for reuse 
 					close( sd ); 
-					client_socket[i] = 0; 
+					client_socket[i] = 0;
+					isClientGetTheLast[i] = 0;
 				} 
 					
 				//Echo back the message that came in 
@@ -188,24 +197,26 @@ int main(int argc , char *argv[])
 					//set the string terminating NULL byte on the end 
 					//of the data read 
 					buffer[valread] = '\0';
-                    char response[MaxResponse]; 
+                    char response[MaxResponse];
+					//小心GetIt還沒讀走command就進來了
+					if(strcmp(buffer,"GetIt")==0){
+						printf("server know\n");
+						isClientGetTheLast[i] = 1;
+					}
                     if(strcmp(buffer,"ls")==0){
-                        strcpy(response,"Got ls!");
-                        printf("response %s\n",response);
-                        DIR *d;
-                        struct dirent *dir;
-                        d = opendir(".");
-						if (d) {
-							int FileNumber = 0;
-							int charNumber = 0;
-							while ((dir = readdir(d)) != NULL) {
-								sprintf(&response[charNumber],"%s\n",dir->d_name);
-								FileNumber += 1;
-								charNumber += strlen(dir->d_name)+1;
-							}
-							closedir(d);
+                        struct dirent **entry_list;
+						int FileNumber = scandir(".", &entry_list, 0, alphasort);
+						int charNumber = 0;
+						for(int i=0;i<FileNumber;i++){
+							struct dirent *entry = entry_list[i];
+							//printf("%s\n",entry->d_name);
+							sprintf(&response[charNumber],"%s\n",entry->d_name);
+							charNumber += strlen(entry->d_name)+1;
 						}
-						write(sd, response,strlen(response));
+						if(FD_ISSET( sd , &writefds) && isClientGetTheLast[i]==1){
+							write(sd, response,strlen(response));
+							isClientGetTheLast[i] = 0;
+						}
                     }
                     if(strcmp(buffer,"put")==0){
             
@@ -217,7 +228,7 @@ int main(int argc , char *argv[])
                         
                     }
 				} 
-			} 
+			}
 		} 
 	} 
 		
