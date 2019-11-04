@@ -9,6 +9,10 @@
 #include <stdlib.h>
 
 #define BUFF_SIZE 1024
+#define MaxFileName 1000
+#define Client_Get "GetIt"
+#define MyEOF "@@@@@@"
+#define EOFnum 6
 
 using namespace std;
 int main(int argc , char *argv[])
@@ -63,16 +67,35 @@ int main(int argc , char *argv[])
         */
         printf("here\n");
         char command[10];
+        char fileName[MaxFileName];
+        char ToSend[BUFF_SIZE];
         scanf("%s",command);
         if(strcmp(command,"ls")==0){
-            send(localSocket , command , strlen(command) , 0 );
-            char buffer[1024];
+            strcpy(ToSend,command);
+            send(localSocket , ToSend , strlen(ToSend) , 0 );
+            //char buffer[1024];
             read(localSocket,receiveMessage,BUFF_SIZE);
             printf("receive %s\n",receiveMessage);
-            send(localSocket , "GetIt" , strlen("GetIt") , 0 );
+            send(localSocket , Client_Get , strlen(Client_Get) , 0 );
         }
         else if(strcmp(command,"put")==0){
-            
+            scanf("%s",fileName);
+            sprintf(ToSend,"%s %s",command,fileName);
+            send(localSocket , ToSend , strlen(ToSend) , 0 );
+            //printf("ToSend==%s\n",ToSend);
+            FILE *file = fopen(fileName, "rb");
+            while(!feof(file)){
+                int NumItems = fread(ToSend,sizeof(char),BUFF_SIZE,file);
+                int NumSend = send(localSocket , ToSend , NumItems*sizeof(char) , 0 );
+                printf("Send items %d\n",NumSend);
+                sleep(0.1);
+            }
+            sprintf(ToSend,"%s",MyEOF);
+            printf("is ToSend EOF %s\n",ToSend);
+            send(localSocket , ToSend , EOFnum , 0 );
+            //char buffer[1024];
+            //fread the file into buffer
+            //read(localSocket,receiveMessage,BUFF_SIZE);
         }
         else if(strcmp(command,"get")==0){
             

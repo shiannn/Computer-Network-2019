@@ -1,3 +1,3 @@
 #! /bin/bash
-g++ client_sample.cpp -o client
-gcc selectSock.c -o server
+g++ ClientHome/client_sample.cpp -o ClientHome/client
+gcc ServerHome/selectSock.c -o ServerHome/server

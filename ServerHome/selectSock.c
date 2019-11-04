@@ -19,6 +19,11 @@
 
 #define MaxResponse 1024
 #define max_clients 30
+#define Client_Get "GetIt"
+#define MaxFileName 1000
+#define MaxCommand 10
+#define MyEOF "@@@@@@"
+#define EOFnum 6
 
 void handle(int arg)
 {
@@ -35,7 +40,7 @@ int main(int argc , char *argv[])
 	int max_sd; 
 	struct sockaddr_in address; 
 		
-	char buffer[1025]; //data buffer of 1K 
+	char buffer[MaxResponse]; //data buffer of 1K 
 
 	int isClientGetTheLast[max_clients] = {0};
 		
@@ -178,7 +183,7 @@ int main(int argc , char *argv[])
 			{ 
 				//Check if it was for closing , and also read the 
 				//incoming message 
-				if ((valread = read( sd , buffer, 1024)) == 0) 
+				if ((valread = read( sd , buffer, MaxResponse)) == 0) 
 				{ 
 					//Somebody disconnected , get his details and print 
 					getpeername(sd , (struct sockaddr*)&address ,(socklen_t*)&addrlen); 
@@ -195,15 +200,16 @@ int main(int argc , char *argv[])
 				else
 				{ 
 					//set the string terminating NULL byte on the end 
-					//of the data read 
+					//of the data read
+
 					buffer[valread] = '\0';
                     char response[MaxResponse];
 					//小心GetIt還沒讀走command就進來了
-					if(strcmp(buffer,"GetIt")==0){
+					if(strcmp(buffer,Client_Get)==0){
 						printf("server know\n");
 						isClientGetTheLast[i] = 1;
 					}
-                    if(strcmp(buffer,"ls")==0){
+                    if(strncmp(buffer,"ls",2)==0){
                         struct dirent **entry_list;
 						int FileNumber = scandir(".", &entry_list, 0, alphasort);
 						int charNumber = 0;
@@ -218,11 +224,24 @@ int main(int argc , char *argv[])
 							isClientGetTheLast[i] = 0;
 						}
                     }
-                    if(strcmp(buffer,"put")==0){
-            
+                    if(strncmp(buffer,"put",3)==0){
+						//client upload
+						char commandDummy[MaxCommand];
+						char FileName[MaxFileName];
+						sscanf(buffer,"%s%s",commandDummy,FileName);
+						printf("commandDummu==%s FileName==%s\n",commandDummy,FileName);
+						FILE *file = fopen(FileName, "wb");
+						int count;
+						while((count = read(sd,buffer,sizeof(buffer)))>0){
+							if(strncmp(buffer,MyEOF,EOFnum)==0)break;
+							printf("read count==%d\n",count);
+							fwrite(buffer,sizeof(char),count,file);
+						}
+						printf("i break\n");
+						fclose(file);
                     }
                     if(strcmp(buffer,"get")==0){
-                        
+                        //client download
                     }
                     if(strcmp(buffer,"play")==0){
                         
