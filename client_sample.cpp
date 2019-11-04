@@ -67,44 +67,8 @@ int main(int argc , char *argv[])
         if(strcmp(command,"ls")==0){
             send(localSocket , command , strlen(command) , 0 );     
             char buffer[1024];
-            int32_t Client_FileNumber;
-            char *FileNumberPtr = (char*)&Client_FileNumber;
-            read(localSocket, FileNumberPtr, 4);
-            Client_FileNumber = ntohl(Client_FileNumber);
-            printf("Client_FileNumber %d\n",Client_FileNumber);
-            for(int i=0;i<Client_FileNumber;i++){
-                int32_t Client_charNumber;
-                char *CharNumberPtr = (char*)&Client_charNumber;
-                read(localSocket, CharNumberPtr, 4);
-                Client_charNumber = ntohl(Client_charNumber);
-                read(localSocket, buffer, Client_charNumber);
-                buffer[Client_charNumber] = '\0';
-                printf("FileName == %s\n",buffer);
-            }
-            /*
-            while(read(localSocket, data, 4)>0){
-                Client_charNumber = ntohl(Client_charNumber);
-                printf("Char number == %d\n",Client_charNumber);
-                read(localSocket, buffer, Client_charNumber);
-                buffer[Client_charNumber] = '\0';
-                printf("File name == %s\n",buffer);
-            }
-            */
-            /*
-            int valread;
-            //should be done in the if scope
-            //first trans a number to ensure the file number
-            if ((valread = read( localSocket , buffer, 1024)) > 0) { 
-                buffer[valread] = '\0';
-                printf("number is %s\n",buffer);
-            }
-            for(int i=0;i<fileNum;i++){
-                if ((valread = read( localSocket , buffer, 1024)) > 0) { 
-                    buffer[valread] = '\0';
-                    printf("Name:%s\n",buffer);
-                }
-            }
-            */
+            read(localSocket,receiveMessage,BUFF_SIZE);
+            printf("receive %s\n",receiveMessage);
         }
         else if(strcmp(command,"put")==0){
             

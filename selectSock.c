@@ -196,35 +196,16 @@ int main(int argc , char *argv[])
                         struct dirent *dir;
                         d = opendir(".");
 						if (d) {
-							int32_t FileNumber = 0;
+							int FileNumber = 0;
+							int charNumber = 0;
 							while ((dir = readdir(d)) != NULL) {
+								sprintf(&response[charNumber],"%s\n",dir->d_name);
 								FileNumber += 1;
+								charNumber += strlen(dir->d_name)+1;
 							}
-							int32_t conv = htonl(FileNumber);
-							char *data = (char*)&conv;
-							write(sd, data,sizeof(conv));
 							closedir(d);
 						}
-						d = opendir(".");
-                        if (d) {
-                            while ((dir = readdir(d)) != NULL) {
-								int charNumber = strlen(dir->d_name);
-								//傳送數字(檔名bytes數)給client
-								int32_t conv = htonl(charNumber);
-								char *data = (char*)&conv;
-								write(sd, data,sizeof(conv));
-								strcpy(response,dir->d_name);
-								send(sd , response , strlen(response) , 0 ); 
-                                //send(sd , response , strlen(response) , 0 ); 
-                            }
-                            
-                            printf("resNum %s\n",response);
-                            //send(sd , response , strlen(response) , 0 ); 
-							closedir(d);
-                        }
-						printf("done\n");
-                        //list the directory
-                        //send(sd , response , strlen(response) , 0 ); 
+						write(sd, response,strlen(response));
                     }
                     if(strcmp(buffer,"put")==0){
             
