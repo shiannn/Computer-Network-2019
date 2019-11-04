@@ -19,7 +19,8 @@
 
 #define MaxResponse 1024
 #define max_clients 30
-#define Client_Get "GetIt"
+#define Client_Get "clientGetIt"
+#define Server_Get "serverGetIt"
 #define MaxFileName 1000
 #define MaxCommand 10
 #define MyEOF "@@@@@@"
@@ -234,6 +235,7 @@ int main(int argc , char *argv[])
 						int count;
 						while((count = read(sd,buffer,sizeof(buffer)))>0){
 							if(strncmp(buffer,MyEOF,EOFnum)==0)break;
+							send(sd , Server_Get , strlen(Server_Get) , 0 );
 							printf("read count==%d\n",count);
 							fwrite(buffer,sizeof(char),count,file);
 						}
