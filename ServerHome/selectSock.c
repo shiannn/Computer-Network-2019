@@ -242,8 +242,34 @@ int main(int argc , char *argv[])
 						printf("i break\n");
 						fclose(file);
                     }
-                    if(strcmp(buffer,"get")==0){
+                    if(strncmp(buffer,"get",3)==0){
                         //client download
+						char commandDummy[MaxCommand];
+						char FileName[MaxFileName];
+						sscanf(buffer,"%s%s",commandDummy,FileName);
+						printf("commandDummu==%s FileName==%s\n",commandDummy,FileName);
+						FILE *file = fopen(FileName, "rb");
+						int flagClientGet = 1;
+						while(!feof(file)){
+							if(flagClientGet == 1){
+								int NumItems = fread(response,sizeof(char),MaxResponse,file);
+								int NumSend = send(sd , response , NumItems*sizeof(char) , 0 );
+								printf("Send items %d\n",NumSend);
+								flagClientGet = 0;
+							}
+							//這個sleep要改成確認server的"收到"
+							//read() 到才往下傳下一個封包
+							//sleep(0.1);
+							int Count = read(sd,buffer,MaxResponse);
+							buffer[Count] = '\0';
+							//printf("rece==%s\n",receiveMessage);
+							if(strcmp(buffer,Client_Get)==0){
+								flagClientGet = 1;
+							}
+						}
+						sprintf(response,"%s",MyEOF);
+						printf("is ToSend EOF %s\n",response);
+						send(sd , response , EOFnum , 0 );
                     }
                     if(strcmp(buffer,"play")==0){
                         

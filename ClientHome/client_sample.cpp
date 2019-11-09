@@ -111,7 +111,20 @@ int main(int argc , char *argv[])
             //read(localSocket,receiveMessage,BUFF_SIZE);
         }
         else if(strcmp(command,"get")==0){
-            
+            scanf("%s",fileName);
+            sprintf(ToSend,"%s %s",command,fileName);
+            send(localSocket , ToSend , strlen(ToSend) , 0 );
+
+            FILE *file = fopen(fileName, "wb");
+            int count;
+            while((count = read(localSocket,receiveMessage,BUFF_SIZE))>0){
+                if(strncmp(receiveMessage,MyEOF,EOFnum)==0)break;
+                send(localSocket , Client_Get , strlen(Client_Get) , 0 );
+                printf("read count==%d\n",count);
+                fwrite(receiveMessage,sizeof(char),count,file);
+            }
+            printf("get break\n");
+            fclose(file);
         }
         else if(strcmp(command,"play")==0){
             
