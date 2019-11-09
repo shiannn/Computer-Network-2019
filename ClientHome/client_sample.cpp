@@ -128,7 +128,9 @@ int main(int argc , char *argv[])
             fclose(file);
         }
         else if(strcmp(command,"play")==0){
-            
+            scanf("%s",fileName);
+            sprintf(ToSend,"%s %s",command,fileName);
+            send(localSocket , ToSend , strlen(ToSend) , 0 );
         }
     }
     printf("close Socket\n");
