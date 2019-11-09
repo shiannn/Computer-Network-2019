@@ -11,7 +11,11 @@
 #include <netinet/in.h> 
 #include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros 
 #include <signal.h>
-#include <dirent.h> 
+#include <dirent.h>
+#include "opencv2/opencv.hpp"
+
+using namespace std;
+using namespace cv;
 	
 #define TRUE 1 
 #define FALSE 0 

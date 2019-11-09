@@ -75,7 +75,8 @@ int main(int argc , char *argv[])
             strcpy(ToSend,command);
             send(localSocket , ToSend , strlen(ToSend) , 0 );
             //char buffer[1024];
-            read(localSocket,receiveMessage,BUFF_SIZE);
+            int count = read(localSocket,receiveMessage,BUFF_SIZE);
+            receiveMessage[count] = '\0';
             printf("receive %s\n",receiveMessage);
             send(localSocket , Client_Get , strlen(Client_Get) , 0 );
         }
