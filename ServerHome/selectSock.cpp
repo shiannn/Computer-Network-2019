@@ -56,6 +56,9 @@ int main(int argc , char *argv[])
 	char FileName[max_clients][MaxFileName];
 	char bufferPut[max_clients][MaxResponse];
 	char bufferGet[max_clients][MaxResponse];
+
+	VideoCapture cap[max_clients];
+	Mat imgServer[max_clients];
 		
 	//set of socket descriptors 
 	fd_set readfds; 
@@ -237,9 +240,6 @@ int main(int argc , char *argv[])
 						printf("read count==%d\n",count);
 						fwrite(bufferPut[i],sizeof(char),count,ClientPutfp[i]);
 					}
-					else if(ClientPlay[i]==1){
-
-					}
 					else{
 						buffer[valread] = '\0';
                     	char response[MaxResponse];
@@ -277,55 +277,26 @@ int main(int argc , char *argv[])
 
 							ClientGet[i] = 1;
 							ClientGetfp[i] = fopen(FileName[i], "rb");
-
-							/*
-							int flagClientGet = 1;
-							while(!feof(file)){
-								if(flagClientGet == 1){
-									int NumItems = fread(response,sizeof(char),MaxResponse,file);
-									int NumSend = send(sd , response , NumItems*sizeof(char) , 0 );
-									printf("Send items %d\n",NumSend);
-									flagClientGet = 0;
-								}
-								//這個sleep要改成確認server的"收到"
-								//read() 到才往下傳下一個封包
-								//sleep(0.1);
-								int Count = read(sd,buffer,MaxResponse);
-								buffer[Count] = '\0';
-								//printf("rece==%s\n",receiveMessage);
-								if(strcmp(buffer,Client_Get)==0){
-									flagClientGet = 1;
-								}
-							}
-							sprintf(response,"%s",MyEOF);
-							printf("is ToSend EOF %s\n",response);
-							send(sd , response , EOFnum , 0 );
-							*/
 						}
 						if(strncmp(buffer,"play",4)==0){
+							//client play
 							char commandDummy[MaxCommand];
-							char FileName[MaxFileName];
-							sscanf(buffer,"%s%s",commandDummy,FileName);
+							sscanf(buffer,"%s%s",commandDummy,FileName[i]);
 							printf("commandDummu==%s FileName==%s\n",commandDummy,FileName);
 
-							Mat imgServer;
-							VideoCapture cap(FileName);
+							//需要一個array for cap
+							//VideoCapture cap(FileName);
+							ClientPlay[i] = 1;
+							cap[i].open(FileName[i]);
 							
 							// get the resolution of the video
-							int width = cap.get(CV_CAP_PROP_FRAME_WIDTH);
-							int height = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
+							int width = cap[i].get(CV_CAP_PROP_FRAME_WIDTH);
+							int height = cap[i].get(CV_CAP_PROP_FRAME_HEIGHT);
 							cout  << width << ", " << height << endl;
-							//send width 和 height回去給client
-							
-							//allocate container to load frames 
-		
-							imgServer = Mat::zeros(height,width, CV_8UC3);    
-							
-							// ensure the memory is continuous (for efficiency issue.)
-							if(!imgServer.isContinuous()){
-								imgServer = imgServer.clone();
-							}
 
+							imgServer[i] = Mat::zeros(height,width, CV_8UC3);
+
+							//send width 和 height回去給client
 							//send size first
 							// get the size of a frame in bytes 
 							//int imgSize = width * height * 3;
@@ -340,30 +311,6 @@ int main(int argc , char *argv[])
 							write(sd,dataPtr,sizeof(conv));
 							Count = read(sd,buffer,MaxResponse);
 							buffer[0] = '\0';
-							
-					
-							int flagClientGet = 1;
-							while(1){
-								//send VideoImage
-								if(flagClientGet == 1){
-									cap >> imgServer;
-									// get the size of a frame in bytes 
-									int imgSize = imgServer.total() * imgServer.elemSize();
-									// allocate a buffer to load the frame (there would be 2 buffers in the world of the Internet)
-									uchar VideoImagebuffer[imgSize];
-									
-									// copy a frame to the buffer
-									memcpy(VideoImagebuffer,imgServer.data, imgSize);
-									int NumSend = send(sd , VideoImagebuffer , imgSize*sizeof(uchar) , MSG_WAITALL);
-									flagClientGet = 0;
-								}
-								int Count = read(sd,buffer,MaxResponse);
-								buffer[Count] = '\0';
-								if(strcmp(buffer,Client_Get)==0){
-									flagClientGet = 1;
-								}
-							}
-							cap.release();
 						}
 					}
 				} 
@@ -386,6 +333,30 @@ int main(int argc , char *argv[])
 							fclose(ClientGetfp[i]);
 						}
 						isClientGetTheLast[i] = 0;
+					}
+				}
+				if(ClientPlay[i]==1){
+					if(isClientGetTheLast[i] == 1){
+						//Mat imgServer;
+						// ensure the memory is continuous (for efficiency issue.)
+						if(!imgServer[i].isContinuous()){
+							imgServer[i] = imgServer[i].clone();
+						}
+						//allocate container to load frames
+
+						//send VideoImage
+						cap[i] >> imgServer[i];
+						// get the size of a frame in bytes 
+						int imgSize = imgServer[i].total() * imgServer[i].elemSize();
+						// allocate a buffer to load the frame (there would be 2 buffers in the world of the Internet)
+						uchar VideoImagebuffer[imgSize];
+						
+						// copy a frame to the buffer
+						memcpy(VideoImagebuffer,imgServer[i].data, imgSize);
+						int NumSend = send(sd , VideoImagebuffer , imgSize*sizeof(uchar) , MSG_WAITALL);
+						
+						isClientGetTheLast[i] = 0;
+						//cap.release();
 					}
 				}
 			}

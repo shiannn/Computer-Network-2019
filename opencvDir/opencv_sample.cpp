@@ -11,11 +11,13 @@ int main(int argc, char** argv){
     // server
 
     Mat imgServer,imgClient;
-    VideoCapture cap("./tmp.mpg");
+    //VideoCapture cap("./tmp.mpg");
+    VideoCapture cap[10];
+    cap[0].open("./tmp.mpg");
     
     // get the resolution of the video
-    int width = cap.get(CV_CAP_PROP_FRAME_WIDTH);
-    int height = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
+    int width = cap[0].get(CV_CAP_PROP_FRAME_WIDTH);
+    int height = cap[0].get(CV_CAP_PROP_FRAME_HEIGHT);
     cout  << width << ", " << height << endl;
     
     //allocate container to load frames 
@@ -35,7 +37,7 @@ int main(int argc, char** argv){
 
     while(1){
         //get a frame from the video to the container on server.
-        cap >> imgServer;
+        cap[0] >> imgServer;
         
         // get the size of a frame in bytes 
         int imgSize = imgServer.total() * imgServer.elemSize();
@@ -59,7 +61,7 @@ int main(int argc, char** argv){
                 break;
      }
       ////////////////////////////////////////////////////
-	cap.release();
+	cap[0].release();
 	destroyAllWindows();
 	//return 0;
 }
