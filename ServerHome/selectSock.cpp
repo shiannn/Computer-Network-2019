@@ -191,13 +191,11 @@ int main(int argc , char *argv[])
 		for (i = 0; i < max_clients; i++) 
 		{ 
 			sd = client_socket[i]; 
-				
 			//client傳來的東西可能被上面攔截
 			if (FD_ISSET( sd , &readfds)) 
 			{ 
 				//Check if it was for closing , and also read the 
 				//incoming message
-				
 				if ((valread = read( sd , buffer, MaxResponse)) == 0) 
 				{ 
 					//Somebody disconnected , get his details and print 
@@ -218,7 +216,14 @@ int main(int argc , char *argv[])
 					//of the data read
 
 					//給予 client 服務
-					if(ClientPut[i]==1){
+					//1.greeting message 2.command  3.data
+					
+					if(strncmp(buffer,Client_Get,strlen(Client_Get))==0){
+						//greeting message
+						printf("server know\n");
+						isClientGetTheLast[i] = 1;
+					}
+					else if(ClientPut[i]==1){
 						//int count = read(sd,bufferPut[i],sizeof(bufferPut[i]));
 						int count = valread;
 						memcpy(bufferPut[i],buffer,count);
@@ -232,9 +237,6 @@ int main(int argc , char *argv[])
 						printf("read count==%d\n",count);
 						fwrite(bufferPut[i],sizeof(char),count,ClientPutfp[i]);
 					}
-					else if(ClientGet[i]==1){
-
-					}
 					else if(ClientPlay[i]==1){
 
 					}
@@ -242,11 +244,8 @@ int main(int argc , char *argv[])
 						buffer[valread] = '\0';
                     	char response[MaxResponse];
 						//如果client不是任何服務下 那讀到的就是command
-						if(strcmp(buffer,Client_Get)==0){
-							printf("server know\n");
-							isClientGetTheLast[i] = 1;
-						}
 						if(strncmp(buffer,"ls",2)==0){
+							printf("after Getting\n");
 							struct dirent **entry_list;
 							int FileNumber = scandir(".", &entry_list, 0, alphasort);
 							int charNumber = 0;
@@ -269,26 +268,17 @@ int main(int argc , char *argv[])
 							printf("commandDummu==%s FileName==%s\n",commandDummy,FileName[i]);
 							ClientPut[i] = 1;
 							ClientPutfp[i] = fopen(FileName[i], "wb");
-							
-							/*
-							int count;
-							while((count = read(sd,buffer,sizeof(buffer)))>0){
-								if(strncmp(buffer,MyEOF,EOFnum)==0)break;
-								send(sd , Server_Get , strlen(Server_Get) , 0 );
-								printf("read count==%d\n",count);
-								fwrite(buffer,sizeof(char),count,file);
-							}
-							printf("i break\n");
-							fclose(file);
-							*/
 						}
 						if(strncmp(buffer,"get",3)==0){
 							//client download
 							char commandDummy[MaxCommand];
-							char FileName[MaxFileName];
-							sscanf(buffer,"%s%s",commandDummy,FileName);
-							printf("commandDummu==%s FileName==%s\n",commandDummy,FileName);
-							FILE *file = fopen(FileName, "rb");
+							sscanf(buffer,"%s%s",commandDummy,FileName[i]);
+							printf("commandDummu==%s FileName==%s\n",commandDummy,FileName[i]);
+
+							ClientGet[i] = 1;
+							ClientGetfp[i] = fopen(FileName[i], "rb");
+
+							/*
 							int flagClientGet = 1;
 							while(!feof(file)){
 								if(flagClientGet == 1){
@@ -310,6 +300,7 @@ int main(int argc , char *argv[])
 							sprintf(response,"%s",MyEOF);
 							printf("is ToSend EOF %s\n",response);
 							send(sd , response , EOFnum , 0 );
+							*/
 						}
 						if(strncmp(buffer,"play",4)==0){
 							char commandDummy[MaxCommand];
@@ -376,6 +367,27 @@ int main(int argc , char *argv[])
 						}
 					}
 				} 
+			}
+			if(FD_ISSET( sd , &writefds)){
+				if(ClientGet[i]==1){
+					if(isClientGetTheLast[i] == 1){
+						if(!feof(ClientGetfp[i])){
+							//give file content
+							int NumItems = fread(bufferGet[i],sizeof(char),MaxResponse,ClientGetfp[i]);
+							int NumSend = send(sd , bufferGet[i] , NumItems*sizeof(char) , 0 );
+							printf("Send items %d\n",NumSend);
+						}
+						else{
+							//give EOF
+							sprintf(bufferGet[i],"%s",MyEOF);
+							printf("is ToSend EOF %s\n",bufferGet[i]);
+							send(sd , bufferGet[i] , EOFnum , 0 );
+							ClientGet[i] = 0;
+							fclose(ClientGetfp[i]);
+						}
+						isClientGetTheLast[i] = 0;
+					}
+				}
 			}
 		} 
 	} 

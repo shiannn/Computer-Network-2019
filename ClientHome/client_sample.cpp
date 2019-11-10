@@ -55,21 +55,7 @@ int main(int argc , char *argv[])
     }
     char receiveMessage[BUFF_SIZE] = {};
     while(1){
-        /*
-        bzero(receiveMessage,sizeof(char)*BUFF_SIZE);
-        if ((recved = recv(localSocket,receiveMessage,sizeof(char)*BUFF_SIZE,0)) < 0){
-            cout << "recv failed, with received bytes = " << recved << endl;
-            break;
-        }
-        else if (recved == 0){
-            cout << "<end>\n";
-            break;
-        }
-        printf("Is receive Blocked?\n");
-        char buffer[100] = "hello";
-        send(localSocket , buffer , strlen(buffer) , 0 ); 
-        //printf("%d:%s\n",recved,receiveMessage);
-        */
+        // EOF should give greeting message back, too
         printf("here\n");
         char command[10];
         char fileName[MaxFileName];
@@ -122,10 +108,15 @@ int main(int argc , char *argv[])
             FILE *file = fopen(fileName, "wb");
             int count;
             while((count = read(localSocket,receiveMessage,BUFF_SIZE))>0){
-                if(strncmp(receiveMessage,MyEOF,EOFnum)==0)break;
-                send(localSocket , Client_Get , strlen(Client_Get) , 0 );
-                printf("read count==%d\n",count);
-                fwrite(receiveMessage,sizeof(char),count,file);
+                if(strncmp(receiveMessage,MyEOF,EOFnum)==0){
+                    send(localSocket , Client_Get , strlen(Client_Get) , 0 );
+                    break;
+                }
+                else{
+                    send(localSocket , Client_Get , strlen(Client_Get) , 0 );
+                    printf("read count==%d\n",count);
+                    fwrite(receiveMessage,sizeof(char),count,file);
+                }
             }
             printf("get break\n");
             fclose(file);
