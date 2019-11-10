@@ -191,10 +191,12 @@ int main(int argc , char *argv[])
 		{ 
 			sd = client_socket[i]; 
 				
+			//client傳來的東西可能被上面攔截
 			if (FD_ISSET( sd , &readfds)) 
 			{ 
 				//Check if it was for closing , and also read the 
-				//incoming message 
+				//incoming message
+				
 				if ((valread = read( sd , buffer, MaxResponse)) == 0) 
 				{ 
 					//Somebody disconnected , get his details and print 
@@ -214,161 +216,165 @@ int main(int argc , char *argv[])
 					//set the string terminating NULL byte on the end 
 					//of the data read
 
-					buffer[valread] = '\0';
-                    char response[MaxResponse];
-					//小心GetIt還沒讀走command就進來了
-					if(strcmp(buffer,Client_Get)==0){
-						printf("server know\n");
-						isClientGetTheLast[i] = 1;
+					//給予 client 服務
+					if(ClientPut[i]==1){
+						//int count = read(sd,bufferPut[i],sizeof(bufferPut[i]));
+						int count = valread;
+						memcpy(bufferPut[i],buffer,count);
+						if(strncmp(bufferPut[i],MyEOF,EOFnum)==0){
+							printf("the client .jpg EOF\n");
+							ClientPut[i] = 0;
+							fclose(ClientPutfp[i]);
+							continue;
+						}
+						send(sd , Server_Get , strlen(Server_Get) , 0 );
+						printf("read count==%d\n",count);
+						fwrite(bufferPut[i],sizeof(char),count,ClientPutfp[i]);
 					}
-                    if(strncmp(buffer,"ls",2)==0){
-                        struct dirent **entry_list;
-						int FileNumber = scandir(".", &entry_list, 0, alphasort);
-						int charNumber = 0;
-						for(int i=0;i<FileNumber;i++){
-							struct dirent *entry = entry_list[i];
-							//printf("%s\n",entry->d_name);
-							sprintf(&response[charNumber],"%s\n",entry->d_name);
-							charNumber += strlen(entry->d_name)+1;
+					else if(ClientGet[i]==1){
+
+					}
+					else if(ClientPlay[i]==1){
+
+					}
+					else{
+						buffer[valread] = '\0';
+                    	char response[MaxResponse];
+						//如果client不是任何服務下 那讀到的就是command
+						if(strcmp(buffer,Client_Get)==0){
+							printf("server know\n");
+							isClientGetTheLast[i] = 1;
 						}
-						if(FD_ISSET( sd , &writefds) && isClientGetTheLast[i]==1){
-							write(sd, response,strlen(response));
-							isClientGetTheLast[i] = 0;
-						}
-                    }
-                    if(strncmp(buffer,"put",3)==0){
-						//client upload
-						char commandDummy[MaxCommand];
-						char FileName[MaxFileName];
-						sscanf(buffer,"%s%s",commandDummy,FileName);
-						printf("commandDummu==%s FileName==%s\n",commandDummy,FileName);
-						ClientPut[i] = 1;
-						ClientPutfp[i] = fopen(FileName, "wb");
-						
-						/*
-						int count;
-						while((count = read(sd,buffer,sizeof(buffer)))>0){
-							if(strncmp(buffer,MyEOF,EOFnum)==0)break;
-							send(sd , Server_Get , strlen(Server_Get) , 0 );
-							printf("read count==%d\n",count);
-							fwrite(buffer,sizeof(char),count,file);
-						}
-						printf("i break\n");
-						fclose(file);
-						*/
-                    }
-                    if(strncmp(buffer,"get",3)==0){
-                        //client download
-						char commandDummy[MaxCommand];
-						char FileName[MaxFileName];
-						sscanf(buffer,"%s%s",commandDummy,FileName);
-						printf("commandDummu==%s FileName==%s\n",commandDummy,FileName);
-						FILE *file = fopen(FileName, "rb");
-						int flagClientGet = 1;
-						while(!feof(file)){
-							if(flagClientGet == 1){
-								int NumItems = fread(response,sizeof(char),MaxResponse,file);
-								int NumSend = send(sd , response , NumItems*sizeof(char) , 0 );
-								printf("Send items %d\n",NumSend);
-								flagClientGet = 0;
+						if(strncmp(buffer,"ls",2)==0){
+							struct dirent **entry_list;
+							int FileNumber = scandir(".", &entry_list, 0, alphasort);
+							int charNumber = 0;
+							for(int i=0;i<FileNumber;i++){
+								struct dirent *entry = entry_list[i];
+								//printf("%s\n",entry->d_name);
+								sprintf(&response[charNumber],"%s\n",entry->d_name);
+								charNumber += strlen(entry->d_name)+1;
 							}
-							//這個sleep要改成確認server的"收到"
-							//read() 到才往下傳下一個封包
-							//sleep(0.1);
+							if(FD_ISSET( sd , &writefds) && isClientGetTheLast[i]==1){
+								write(sd, response,strlen(response));
+								isClientGetTheLast[i] = 0;
+							}
+						}
+						if(strncmp(buffer,"put",3)==0){
+							//client upload
+							char commandDummy[MaxCommand];
+							char FileName[MaxFileName];
+							sscanf(buffer,"%s%s",commandDummy,FileName);
+							printf("commandDummu==%s FileName==%s\n",commandDummy,FileName);
+							ClientPut[i] = 1;
+							ClientPutfp[i] = fopen(FileName, "wb");
+							
+							/*
+							int count;
+							while((count = read(sd,buffer,sizeof(buffer)))>0){
+								if(strncmp(buffer,MyEOF,EOFnum)==0)break;
+								send(sd , Server_Get , strlen(Server_Get) , 0 );
+								printf("read count==%d\n",count);
+								fwrite(buffer,sizeof(char),count,file);
+							}
+							printf("i break\n");
+							fclose(file);
+							*/
+						}
+						if(strncmp(buffer,"get",3)==0){
+							//client download
+							char commandDummy[MaxCommand];
+							char FileName[MaxFileName];
+							sscanf(buffer,"%s%s",commandDummy,FileName);
+							printf("commandDummu==%s FileName==%s\n",commandDummy,FileName);
+							FILE *file = fopen(FileName, "rb");
+							int flagClientGet = 1;
+							while(!feof(file)){
+								if(flagClientGet == 1){
+									int NumItems = fread(response,sizeof(char),MaxResponse,file);
+									int NumSend = send(sd , response , NumItems*sizeof(char) , 0 );
+									printf("Send items %d\n",NumSend);
+									flagClientGet = 0;
+								}
+								//這個sleep要改成確認server的"收到"
+								//read() 到才往下傳下一個封包
+								//sleep(0.1);
+								int Count = read(sd,buffer,MaxResponse);
+								buffer[Count] = '\0';
+								//printf("rece==%s\n",receiveMessage);
+								if(strcmp(buffer,Client_Get)==0){
+									flagClientGet = 1;
+								}
+							}
+							sprintf(response,"%s",MyEOF);
+							printf("is ToSend EOF %s\n",response);
+							send(sd , response , EOFnum , 0 );
+						}
+						if(strncmp(buffer,"play",4)==0){
+							char commandDummy[MaxCommand];
+							char FileName[MaxFileName];
+							sscanf(buffer,"%s%s",commandDummy,FileName);
+							printf("commandDummu==%s FileName==%s\n",commandDummy,FileName);
+
+							Mat imgServer;
+							VideoCapture cap(FileName);
+							
+							// get the resolution of the video
+							int width = cap.get(CV_CAP_PROP_FRAME_WIDTH);
+							int height = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
+							cout  << width << ", " << height << endl;
+							//send width 和 height回去給client
+							
+							//allocate container to load frames 
+		
+							imgServer = Mat::zeros(height,width, CV_8UC3);    
+							
+							// ensure the memory is continuous (for efficiency issue.)
+							if(!imgServer.isContinuous()){
+								imgServer = imgServer.clone();
+							}
+
+							//send size first
+							// get the size of a frame in bytes 
+							//int imgSize = width * height * 3;
+							int32_t conv = htonl(width);
+							char *dataPtr = (char*)&conv;
+							write(sd,dataPtr,sizeof(conv));
 							int Count = read(sd,buffer,MaxResponse);
-							buffer[Count] = '\0';
-							//printf("rece==%s\n",receiveMessage);
-							if(strcmp(buffer,Client_Get)==0){
-								flagClientGet = 1;
-							}
-						}
-						sprintf(response,"%s",MyEOF);
-						printf("is ToSend EOF %s\n",response);
-						send(sd , response , EOFnum , 0 );
-                    }
-                    if(strncmp(buffer,"play",4)==0){
-						char commandDummy[MaxCommand];
-						char FileName[MaxFileName];
-						sscanf(buffer,"%s%s",commandDummy,FileName);
-						printf("commandDummu==%s FileName==%s\n",commandDummy,FileName);
+							buffer[0] = '\0';
 
-						Mat imgServer;
-						VideoCapture cap(FileName);
-						
-						// get the resolution of the video
-						int width = cap.get(CV_CAP_PROP_FRAME_WIDTH);
-						int height = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
-						cout  << width << ", " << height << endl;
-						//send width 和 height回去給client
-						
-						//allocate container to load frames 
-    
-						imgServer = Mat::zeros(height,width, CV_8UC3);    
-						
-						// ensure the memory is continuous (for efficiency issue.)
-						if(!imgServer.isContinuous()){
-							imgServer = imgServer.clone();
-						}
-
-						//send size first
-						// get the size of a frame in bytes 
-						//int imgSize = width * height * 3;
-						int32_t conv = htonl(width);
-						char *dataPtr = (char*)&conv;
-						write(sd,dataPtr,sizeof(conv));
-						int Count = read(sd,buffer,MaxResponse);
-						buffer[0] = '\0';
-
-						conv = htonl(height);
-						dataPtr = (char*)&conv;
-						write(sd,dataPtr,sizeof(conv));
-						Count = read(sd,buffer,MaxResponse);
-						buffer[0] = '\0';
-						
-				
-						int flagClientGet = 1;
-						while(1){
-							//send VideoImage
-							if(flagClientGet == 1){
-								cap >> imgServer;
-								// get the size of a frame in bytes 
-								int imgSize = imgServer.total() * imgServer.elemSize();
-								// allocate a buffer to load the frame (there would be 2 buffers in the world of the Internet)
-								uchar VideoImagebuffer[imgSize];
-								
-								// copy a frame to the buffer
-								memcpy(VideoImagebuffer,imgServer.data, imgSize);
-								int NumSend = send(sd , VideoImagebuffer , imgSize*sizeof(uchar) , MSG_WAITALL);
-								flagClientGet = 0;
+							conv = htonl(height);
+							dataPtr = (char*)&conv;
+							write(sd,dataPtr,sizeof(conv));
+							Count = read(sd,buffer,MaxResponse);
+							buffer[0] = '\0';
+							
+					
+							int flagClientGet = 1;
+							while(1){
+								//send VideoImage
+								if(flagClientGet == 1){
+									cap >> imgServer;
+									// get the size of a frame in bytes 
+									int imgSize = imgServer.total() * imgServer.elemSize();
+									// allocate a buffer to load the frame (there would be 2 buffers in the world of the Internet)
+									uchar VideoImagebuffer[imgSize];
+									
+									// copy a frame to the buffer
+									memcpy(VideoImagebuffer,imgServer.data, imgSize);
+									int NumSend = send(sd , VideoImagebuffer , imgSize*sizeof(uchar) , MSG_WAITALL);
+									flagClientGet = 0;
+								}
+								int Count = read(sd,buffer,MaxResponse);
+								buffer[Count] = '\0';
+								if(strcmp(buffer,Client_Get)==0){
+									flagClientGet = 1;
+								}
 							}
-							int Count = read(sd,buffer,MaxResponse);
-							buffer[Count] = '\0';
-							if(strcmp(buffer,Client_Get)==0){
-								flagClientGet = 1;
-							}
+							cap.release();
 						}
-						cap.release();
-                    }
+					}
 				} 
-			}
-			//給予 client 服務
-			if(ClientPut[i]==1){
-				int count = read(sd,bufferPut[i],sizeof(bufferPut[i]));
-				if(strncmp(bufferPut[i],MyEOF,EOFnum)==0){
-					printf("the client .jpg EOF\n");
-					ClientPut[i] = 0;
-					fclose(ClientPutfp[i]);
-					continue;
-				}
-				//send(sd , Server_Get , strlen(Server_Get) , 0 );
-				printf("read count==%d\n",count);
-				fwrite(bufferPut[i],sizeof(char),count,ClientPutfp[i]);
-			}
-			if(ClientGet[i]==1){
-
-			}
-			if(ClientPlay[i]==1){
-
 			}
 		} 
 	} 
