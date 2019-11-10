@@ -230,7 +230,7 @@ int main(int argc , char *argv[])
 					}
 					else if(strncmp(buffer,Client_Get,strlen(Client_Get))==0){
 						//greeting message
-						printf("server know\n");
+						//printf("server know\n");
 						isClientGetTheLast[i] = 1;
 					}
 					else if(ClientPut[i]==1){
@@ -354,14 +354,23 @@ int main(int argc , char *argv[])
 						//send VideoImage
 						cap[i] >> imgServer[i];
 						// get the size of a frame in bytes 
-						int imgSize = imgServer[i].total() * imgServer[i].elemSize();
-						// allocate a buffer to load the frame (there would be 2 buffers in the world of the Internet)
+						int width = cap[i].get(CV_CAP_PROP_FRAME_WIDTH);
+						int height = cap[i].get(CV_CAP_PROP_FRAME_HEIGHT);
+						int imgSize = width*height*3;
 						uchar VideoImagebuffer[imgSize];
-						
-						// copy a frame to the buffer
-						memcpy(VideoImagebuffer,imgServer[i].data, imgSize);
-						int NumSend = send(sd , VideoImagebuffer , imgSize*sizeof(uchar) , MSG_WAITALL);
-						
+						if(imgServer[i].empty()){
+							printf("imgsize == %d\n",imgSize);
+							memcpy(VideoImagebuffer,"@@@@@@", 6);
+							send(sd , VideoImagebuffer , imgSize , 0 );
+						}
+						else{
+							// allocate a buffer to load the frame (there would be 2 buffers in the world of the Internet)
+							imgSize = imgServer[i].total() * imgServer[i].elemSize();
+							// copy a frame to the buffer
+							memcpy(VideoImagebuffer,imgServer[i].data, imgSize);
+							//memcpy(VideoImagebuffer,"@@@@@", 5);
+							int NumSend = send(sd , VideoImagebuffer , imgSize*sizeof(uchar) , MSG_WAITALL);	
+						}
 						isClientGetTheLast[i] = 0;
 					}
 				}

@@ -152,21 +152,29 @@ int main(int argc , char *argv[])
             int imgSize = height*width*3;
             uchar VideoImagebuffer[imgSize];
             uchar *iptr = imgClient.data;
+            uchar EndVideo[] = MyEOF;
 
             while(recv(localSocket,VideoImagebuffer,imgSize,MSG_WAITALL)>0){
-                memcpy(iptr,VideoImagebuffer,imgSize);
-                imshow("Video", imgClient);
-                //Press ESC on keyboard to exit
-                // notice: this part is necessary due to openCV's design.
-                // waitKey means a delay to get the next frame.
-                char c = (char)waitKey(33.3333);
-                if(c==27){
-                    printf("Client Stop Video %s\n",StopVideo);
+                if(memcmp(VideoImagebuffer,EndVideo,EOFnum)==0){
+                    printf("server tell client empty frame\n");
                     send(localSocket , StopVideo , strlen(StopVideo) , 0 );
                     break;
                 }
                 else{
-                    send(localSocket , Client_Get , strlen(Client_Get) , 0 );
+                    memcpy(iptr,VideoImagebuffer,imgSize);
+                    imshow("Video", imgClient);
+                    //Press ESC on keyboard to exit
+                    // notice: this part is necessary due to openCV's design.
+                    // waitKey means a delay to get the next frame.
+                    char c = (char)waitKey(33.3333);
+                    if(c==27){
+                        printf("Client Stop Video %s\n",StopVideo);
+                        send(localSocket , StopVideo , strlen(StopVideo) , 0 );
+                        break;
+                    }
+                    else{
+                        send(localSocket , Client_Get , strlen(Client_Get) , 0 );
+                    }
                 }
             }
             destroyWindow("Video");
