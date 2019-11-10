@@ -136,7 +136,7 @@ int main(int argc , char *argv[])
             sprintf(ToSend,"%s %s",command,fileName);
             send(localSocket , ToSend , strlen(ToSend) , 0 );
 
-            /*
+            
             int32_t ret;
             char *data = (char*)&ret;
             read(localSocket,data,sizeof(ret));
@@ -148,9 +148,9 @@ int main(int argc , char *argv[])
             int height = ntohl(ret);
             
             printf("width==%d height==%d\n",width,height);
-            */
-            int height = 540;
-            int width = 960;
+            
+            //int height = 540;
+            //int width = 960;
             
             Mat imgClient;
             imgClient = Mat::zeros(height, width, CV_8UC3);

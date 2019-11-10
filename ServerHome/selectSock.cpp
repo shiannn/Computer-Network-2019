@@ -292,14 +292,13 @@ int main(int argc , char *argv[])
 						
 						//allocate container to load frames 
     
-						imgServer = Mat::zeros(540,960, CV_8UC3);    
+						imgServer = Mat::zeros(height,width, CV_8UC3);    
 						
 						// ensure the memory is continuous (for efficiency issue.)
 						if(!imgServer.isContinuous()){
 							imgServer = imgServer.clone();
 						}
 
-						/*
 						//send size first
 						// get the size of a frame in bytes 
 						//int imgSize = width * height * 3;
@@ -314,7 +313,7 @@ int main(int argc , char *argv[])
 						write(sd,dataPtr,sizeof(conv));
 						Count = read(sd,buffer,MaxResponse);
 						buffer[0] = '\0';
-						*/
+						
 				
 						int flagClientGet = 1;
 						while(1){
