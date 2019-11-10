@@ -16,6 +16,7 @@ using namespace cv;
 #define MaxFileName 1000
 #define Client_Get "clientGetIt"
 #define Server_Get "serverGetIt"
+#define StopVideo "stopvideo"
 #define MyEOF "@@@@@@"
 #define EOFnum 6
 
@@ -153,7 +154,6 @@ int main(int argc , char *argv[])
             uchar *iptr = imgClient.data;
 
             while(recv(localSocket,VideoImagebuffer,imgSize,MSG_WAITALL)>0){
-                send(localSocket , Client_Get , strlen(Client_Get) , 0 );
                 memcpy(iptr,VideoImagebuffer,imgSize);
                 imshow("Video", imgClient);
                 //Press ESC on keyboard to exit
@@ -161,31 +161,18 @@ int main(int argc , char *argv[])
                 // waitKey means a delay to get the next frame.
                 char c = (char)waitKey(33.3333);
                 if(c==27){
+                    printf("Client Stop Video %s\n",StopVideo);
+                    send(localSocket , StopVideo , strlen(StopVideo) , 0 );
                     break;
                 }
-            }
-            /*
-            // copy a fream from buffer to the container on client
-            
-            int imgSize = 960*540;
-            
-            while(read(localSocket,VideoImagebuffer,imgSize)>0){
-                send(localSocket , Client_Get , strlen(Client_Get) , 0 );
-                memcpy(iptr,VideoImagebuffer,imgSize);
-                imshow("Video", imgClient);
-                //Press ESC on keyboard to exit
-                // notice: this part is necessary due to openCV's design.
-                // waitKey means a delay to get the next frame.
-                char c = (char)waitKey(33.3333);
-                if(c==27){
-                    break;
+                else{
+                    send(localSocket , Client_Get , strlen(Client_Get) , 0 );
                 }
             }
             destroyWindow("Video");
             for(int i=0;i<5;i++){
                 waitKey(1);
             }
-            */
         }
     }
     printf("close Socket\n");

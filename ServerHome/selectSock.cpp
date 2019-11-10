@@ -25,6 +25,7 @@ using namespace cv;
 #define max_clients 30
 #define Client_Get "clientGetIt"
 #define Server_Get "serverGetIt"
+#define StopVideo "stopvideo"
 #define MaxFileName 1000
 #define MaxCommand 10
 #define MyEOF "@@@@@@"
@@ -219,9 +220,15 @@ int main(int argc , char *argv[])
 					//of the data read
 
 					//給予 client 服務
-					//1.greeting message 2.command  3.data
-					
-					if(strncmp(buffer,Client_Get,strlen(Client_Get))==0){
+					//1.greeting message 2.command  3.data 4.Stop Video
+					if(strncmp(buffer,StopVideo,strlen(StopVideo))==0){
+						//stop video
+						printf("server stop video\n");
+						ClientPlay[i] = 0;
+						cap[i].release();
+						isClientGetTheLast[i] = 1;
+					}
+					else if(strncmp(buffer,Client_Get,strlen(Client_Get))==0){
 						//greeting message
 						printf("server know\n");
 						isClientGetTheLast[i] = 1;
@@ -282,7 +289,7 @@ int main(int argc , char *argv[])
 							//client play
 							char commandDummy[MaxCommand];
 							sscanf(buffer,"%s%s",commandDummy,FileName[i]);
-							printf("commandDummu==%s FileName==%s\n",commandDummy,FileName);
+							printf("commandDummu==%s FileName==%s\n",commandDummy,FileName[i]);
 
 							//需要一個array for cap
 							//VideoCapture cap(FileName);
@@ -356,7 +363,6 @@ int main(int argc , char *argv[])
 						int NumSend = send(sd , VideoImagebuffer , imgSize*sizeof(uchar) , MSG_WAITALL);
 						
 						isClientGetTheLast[i] = 0;
-						//cap.release();
 					}
 				}
 			}
