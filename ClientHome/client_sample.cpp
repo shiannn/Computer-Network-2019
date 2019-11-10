@@ -7,6 +7,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "opencv2/opencv.hpp"
+
+using namespace std;
+using namespace cv;
 
 #define BUFF_SIZE 1024
 #define MaxFileName 1000
@@ -131,6 +135,67 @@ int main(int argc , char *argv[])
             scanf("%s",fileName);
             sprintf(ToSend,"%s %s",command,fileName);
             send(localSocket , ToSend , strlen(ToSend) , 0 );
+
+            /*
+            int32_t ret;
+            char *data = (char*)&ret;
+            read(localSocket,data,sizeof(ret));
+            send(localSocket , Client_Get , strlen(Client_Get) , 0 );
+            int width = ntohl(ret);
+
+            read(localSocket,data,sizeof(ret));
+            send(localSocket , Client_Get , strlen(Client_Get) , 0 );
+            int height = ntohl(ret);
+            
+            printf("width==%d height==%d\n",width,height);
+            */
+            int height = 540;
+            int width = 960;
+            
+            Mat imgClient;
+            imgClient = Mat::zeros(height, width, CV_8UC3);
+            if(!imgClient.isContinuous()){
+                imgClient = imgClient.clone();
+            }
+            
+            int imgSize = height*width*3;
+            uchar VideoImagebuffer[imgSize];
+            uchar *iptr = imgClient.data;
+
+            while(recv(localSocket,VideoImagebuffer,imgSize,MSG_WAITALL)>0){
+                send(localSocket , Client_Get , strlen(Client_Get) , 0 );
+                memcpy(iptr,VideoImagebuffer,imgSize);
+                imshow("Video", imgClient);
+                //Press ESC on keyboard to exit
+                // notice: this part is necessary due to openCV's design.
+                // waitKey means a delay to get the next frame.
+                char c = (char)waitKey(33.3333);
+                if(c==27){
+                    break;
+                }
+            }
+            /*
+            // copy a fream from buffer to the container on client
+            
+            int imgSize = 960*540;
+            
+            while(read(localSocket,VideoImagebuffer,imgSize)>0){
+                send(localSocket , Client_Get , strlen(Client_Get) , 0 );
+                memcpy(iptr,VideoImagebuffer,imgSize);
+                imshow("Video", imgClient);
+                //Press ESC on keyboard to exit
+                // notice: this part is necessary due to openCV's design.
+                // waitKey means a delay to get the next frame.
+                char c = (char)waitKey(33.3333);
+                if(c==27){
+                    break;
+                }
+            }
+            destroyWindow("Video");
+            for(int i=0;i<5;i++){
+                waitKey(1);
+            }
+            */
         }
     }
     printf("close Socket\n");
