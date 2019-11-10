@@ -53,6 +53,7 @@ int main(int argc , char *argv[])
 	int ClientPlay[max_clients] = {0};
 	FILE* ClientPutfp[max_clients]={0};
 	FILE* ClientGetfp[max_clients]={0};
+	char FileName[max_clients][MaxFileName];
 	char bufferPut[max_clients][MaxResponse];
 	char bufferGet[max_clients][MaxResponse];
 		
@@ -263,11 +264,11 @@ int main(int argc , char *argv[])
 						if(strncmp(buffer,"put",3)==0){
 							//client upload
 							char commandDummy[MaxCommand];
-							char FileName[MaxFileName];
-							sscanf(buffer,"%s%s",commandDummy,FileName);
-							printf("commandDummu==%s FileName==%s\n",commandDummy,FileName);
+							
+							sscanf(buffer,"%s%s",commandDummy,FileName[i]);
+							printf("commandDummu==%s FileName==%s\n",commandDummy,FileName[i]);
 							ClientPut[i] = 1;
-							ClientPutfp[i] = fopen(FileName, "wb");
+							ClientPutfp[i] = fopen(FileName[i], "wb");
 							
 							/*
 							int count;
