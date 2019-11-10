@@ -48,6 +48,13 @@ int main(int argc , char *argv[])
 	char buffer[MaxResponse]; //data buffer of 1K 
 
 	int isClientGetTheLast[max_clients] = {0};
+	int ClientPut[max_clients] = {0};
+	int ClientGet[max_clients] = {0};
+	int ClientPlay[max_clients] = {0};
+	FILE* ClientPutfp[max_clients]={0};
+	FILE* ClientGetfp[max_clients]={0};
+	char bufferPut[max_clients][MaxResponse];
+	char bufferGet[max_clients][MaxResponse];
 		
 	//set of socket descriptors 
 	fd_set readfds; 
@@ -235,7 +242,10 @@ int main(int argc , char *argv[])
 						char FileName[MaxFileName];
 						sscanf(buffer,"%s%s",commandDummy,FileName);
 						printf("commandDummu==%s FileName==%s\n",commandDummy,FileName);
-						FILE *file = fopen(FileName, "wb");
+						ClientPut[i] = 1;
+						ClientPutfp[i] = fopen(FileName, "wb");
+						
+						/*
 						int count;
 						while((count = read(sd,buffer,sizeof(buffer)))>0){
 							if(strncmp(buffer,MyEOF,EOFnum)==0)break;
@@ -245,6 +255,7 @@ int main(int argc , char *argv[])
 						}
 						printf("i break\n");
 						fclose(file);
+						*/
                     }
                     if(strncmp(buffer,"get",3)==0){
                         //client download
@@ -339,6 +350,25 @@ int main(int argc , char *argv[])
 						cap.release();
                     }
 				} 
+			}
+			//給予 client 服務
+			if(ClientPut[i]==1){
+				int count = read(sd,bufferPut[i],sizeof(bufferPut[i]));
+				if(strncmp(bufferPut[i],MyEOF,EOFnum)==0){
+					printf("the client .jpg EOF\n");
+					ClientPut[i] = 0;
+					fclose(ClientPutfp[i]);
+					continue;
+				}
+				//send(sd , Server_Get , strlen(Server_Get) , 0 );
+				printf("read count==%d\n",count);
+				fwrite(bufferPut[i],sizeof(char),count,ClientPutfp[i]);
+			}
+			if(ClientGet[i]==1){
+
+			}
+			if(ClientPlay[i]==1){
+
 			}
 		} 
 	} 

@@ -96,17 +96,18 @@ int main(int argc , char *argv[])
                 if(flagServerGet == 1){
                     int NumSend = send(localSocket , ToSend , NumItems*sizeof(char) , 0 );
                     printf("Send items %d\n",NumSend);
-                    flagServerGet = 0;
+                    //flagServerGet = 0;
+                    flagServerGet = 1;
                 }
-                //這個sleep要改成確認server的"收到"
-                //read() 到才往下傳下一個封包
-                //sleep(0.1);
+                sleep(0.1);
+                /*
                 int Count = read(localSocket,receiveMessage,BUFF_SIZE);
                 receiveMessage[Count] = '\0';
-                //printf("rece==%s\n",receiveMessage);
+                printf("rece==%s\n",receiveMessage);
                 if(strcmp(receiveMessage,Server_Get)==0){
                     flagServerGet = 1;
                 }
+                */
             }
             sprintf(ToSend,"%s",MyEOF);
             printf("is ToSend EOF %s\n",ToSend);
