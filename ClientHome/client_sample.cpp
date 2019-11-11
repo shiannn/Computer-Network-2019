@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "opencv2/opencv.hpp"
+#include <sys/stat.h>
+#include <sys/types.h>
 
 using namespace std;
 using namespace cv;
@@ -31,6 +33,9 @@ int main(int argc , char *argv[])
         printf("Fail to create a socket.\n");
         return 0;
     }
+
+    mkdir("clientDir", S_IRWXU);
+	chdir("clientDir");
 
     struct sockaddr_in info;
     bzero(&info,sizeof(info));
@@ -61,8 +66,21 @@ int main(int argc , char *argv[])
         char command[10];
         char fileName[MaxFileName];
         char ToSend[BUFF_SIZE];
-        scanf("%s",command);
+        //scanf("%s",command);
+        char Input[MaxFileName];
+        char Dummy[MaxFileName];
+        fgets(Input, MaxFileName, stdin);
+        int retScan = sscanf(Input,"%s%s%s",command,fileName,Dummy);
+        printf("retScan == %d\n",retScan);
+        if(retScan >= 3){
+            printf("Command format error.\n");
+            continue;
+        }
         if(strcmp(command,"ls")==0){
+            if(retScan == 2){
+                printf("Command format error.\n");
+                continue;
+            }
             strcpy(ToSend,command);
             send(localSocket , ToSend , strlen(ToSend) , 0 );
             //char buffer[1024];
@@ -72,11 +90,19 @@ int main(int argc , char *argv[])
             send(localSocket , Client_Get , strlen(Client_Get) , 0 );
         }
         else if(strcmp(command,"put")==0){
-            scanf("%s",fileName);
+            //scanf("%s",fileName);
+            if(retScan == 1){
+                printf("Command format error.\n");
+                continue;
+            }
             sprintf(ToSend,"%s %s",command,fileName);
             send(localSocket , ToSend , strlen(ToSend) , 0 );
             //printf("ToSend==%s\n",ToSend);
             FILE *file = fopen(fileName, "rb");
+            if(file == NULL){
+                printf("The ‘%s’ doesn’t exist\n",fileName);
+                continue;
+            }
             int flagServerGet = 1;
             while(!feof(file)){
                 int NumItems = fread(ToSend,sizeof(char),BUFF_SIZE,file);
@@ -102,7 +128,11 @@ int main(int argc , char *argv[])
             //read(localSocket,receiveMessage,BUFF_SIZE);
         }
         else if(strcmp(command,"get")==0){
-            scanf("%s",fileName);
+            //scanf("%s",fileName);
+            if(retScan == 1){
+                printf("Command format error.\n");
+                continue;
+            }
             sprintf(ToSend,"%s %s",command,fileName);
             send(localSocket , ToSend , strlen(ToSend) , 0 );
 
@@ -123,7 +153,15 @@ int main(int argc , char *argv[])
             fclose(file);
         }
         else if(strcmp(command,"play")==0){
-            scanf("%s",fileName);
+            //scanf("%s",fileName);
+            if(retScan == 1){
+                printf("Command format error.\n");
+                continue;
+            } 
+            if(strncmp(&fileName[strlen(fileName)-4],".mpg",4) != 0){
+                printf("The ‘%s’ is not a mpg file.\n",fileName);
+                continue;
+            }
             sprintf(ToSend,"%s %s",command,fileName);
             send(localSocket , ToSend , strlen(ToSend) , 0 );
 
@@ -181,6 +219,9 @@ int main(int argc , char *argv[])
             for(int i=0;i<5;i++){
                 waitKey(1);
             }
+        }
+        else{
+            printf("Command not found.\n");
         }
     }
     printf("close Socket\n");

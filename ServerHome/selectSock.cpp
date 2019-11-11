@@ -12,6 +12,8 @@
 #include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros 
 #include <signal.h>
 #include <dirent.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "opencv2/opencv.hpp"
 
 using namespace std;
@@ -40,6 +42,9 @@ void handle(int arg)
 int main(int argc , char *argv[]) 
 {   
     signal(SIGPIPE, handle);//避免client ctrl+c 時
+	mkdir("serverDir", S_IRWXU);
+	chdir("serverDir");
+
 	int opt = TRUE; 
 	int master_socket , addrlen , new_socket , client_socket[max_clients] , 
 		activity, i , valread , sd; 
@@ -227,6 +232,9 @@ int main(int argc , char *argv[])
 					ClientPlay[i] = 0;
 					ClientPutfp[i]= 0;
 					ClientGetfp[i]= 0;
+
+					cap[i].release();
+					//imgServer[max_clients];
 				} 
 					
 				//Echo back the message that came in 
