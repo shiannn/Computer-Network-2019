@@ -32,6 +32,8 @@ using namespace cv;
 #define MaxCommand 10
 #define MyEOF "@@@@@@"
 #define EOFnum 6
+#define FileNotFound "@@FileNotFound@@"
+#define FileFound "@@FileFound@@"
 
 void handle(int arg)
 {
@@ -306,8 +308,18 @@ int main(int argc , char *argv[])
 							sscanf(buffer,"%s%s",commandDummy,FileName[i]);
 							printf("commandDummu==%s FileName==%s\n",commandDummy,FileName[i]);
 
-							ClientGet[i] = 1;
 							ClientGetfp[i] = fopen(FileName[i], "rb");
+							if(ClientGetfp[i] == NULL){
+								char NotFound[] = FileNotFound;
+								write(sd, NotFound,strlen(NotFound));
+								isClientGetTheLast[i] = 0;
+							}
+							else{
+								char Found[] = FileFound;
+								write(sd, Found,strlen(Found));
+								isClientGetTheLast[i] = 0;
+								ClientGet[i] = 1;	
+							}
 						}
 						if(strncmp(buffer,"play",4)==0){
 							//client play
@@ -317,31 +329,45 @@ int main(int argc , char *argv[])
 
 							//需要一個array for cap
 							//VideoCapture cap(FileName);
-							ClientPlay[i] = 1;
-							cap[i].open(FileName[i]);
-							
-							// get the resolution of the video
-							int width = cap[i].get(CV_CAP_PROP_FRAME_WIDTH);
-							int height = cap[i].get(CV_CAP_PROP_FRAME_HEIGHT);
-							cout  << width << ", " << height << endl;
+							bool VideoOpen = cap[i].open(FileName[i]);
+							printf("VideoOpen == %d\n",VideoOpen);
+							if(VideoOpen == false){
+								char NotFound[] = FileNotFound;
+								write(sd, NotFound,strlen(NotFound));
+								isClientGetTheLast[i] = 0;
+							}
+							else{
+								char Found[] = FileFound;
+								write(sd, Found,strlen(Found));
+								int Count = read(sd,buffer,MaxResponse);
+								buffer[0] = '\0';
+								//isClientGetTheLast[i] = 0;
+								ClientPlay[i] = 1;
 
-							imgServer[i] = Mat::zeros(height,width, CV_8UC3);
+								// get the resolution of the video
+								int width = cap[i].get(CV_CAP_PROP_FRAME_WIDTH);
+								int height = cap[i].get(CV_CAP_PROP_FRAME_HEIGHT);
+								cout  << width << ", " << height << endl;
 
-							//send width 和 height回去給client
-							//send size first
-							// get the size of a frame in bytes 
-							//int imgSize = width * height * 3;
-							int32_t conv = htonl(width);
-							char *dataPtr = (char*)&conv;
-							write(sd,dataPtr,sizeof(conv));
-							int Count = read(sd,buffer,MaxResponse);
-							buffer[0] = '\0';
+								imgServer[i] = Mat::zeros(height,width, CV_8UC3);
 
-							conv = htonl(height);
-							dataPtr = (char*)&conv;
-							write(sd,dataPtr,sizeof(conv));
-							Count = read(sd,buffer,MaxResponse);
-							buffer[0] = '\0';
+								//send width 和 height回去給client
+								//send size first
+								// get the size of a frame in bytes 
+								//int imgSize = width * height * 3;
+								int32_t conv = htonl(width);
+								char *dataPtr = (char*)&conv;
+								write(sd,dataPtr,sizeof(conv));
+								Count = read(sd,buffer,MaxResponse);
+								buffer[0] = '\0';
+
+								conv = htonl(height);
+								dataPtr = (char*)&conv;
+								write(sd,dataPtr,sizeof(conv));
+								Count = read(sd,buffer,MaxResponse);
+								buffer[0] = '\0';
+								cout << "Video disappear" << endl;
+							}
 						}
 					}
 				} 
@@ -352,8 +378,12 @@ int main(int argc , char *argv[])
 						if(!feof(ClientGetfp[i])){
 							//give file content
 							int NumItems = fread(bufferGet[i],sizeof(char),MaxResponse,ClientGetfp[i]);
-							int NumSend = send(sd , bufferGet[i] , NumItems*sizeof(char) , 0 );
-							printf("Send items %d\n",NumSend);
+							printf("fread items %d\n",NumItems);
+							if(NumItems != 0){
+								int NumSend = send(sd , bufferGet[i] , NumItems*sizeof(char) , 0 );
+								printf("Send items %d\n",NumSend);
+								isClientGetTheLast[i] = 0;
+							}
 						}
 						else{
 							//give EOF
@@ -362,8 +392,8 @@ int main(int argc , char *argv[])
 							send(sd , bufferGet[i] , EOFnum , 0 );
 							ClientGet[i] = 0;
 							fclose(ClientGetfp[i]);
+							isClientGetTheLast[i] = 0;
 						}
-						isClientGetTheLast[i] = 0;
 					}
 				}
 				if(ClientPlay[i]==1){

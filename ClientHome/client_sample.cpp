@@ -21,6 +21,8 @@ using namespace cv;
 #define StopVideo "stopvideo"
 #define MyEOF "@@@@@@"
 #define EOFnum 6
+#define FileNotFound "@@FileNotFound@@"
+#define FileFound "@@FileFound@@"
 
 using namespace std;
 int main(int argc , char *argv[])
@@ -136,7 +138,17 @@ int main(int argc , char *argv[])
             sprintf(ToSend,"%s %s",command,fileName);
             send(localSocket , ToSend , strlen(ToSend) , 0 );
 
-            FILE *file = fopen(fileName, "wb");
+            FILE *file;
+            read(localSocket,receiveMessage,BUFF_SIZE);
+            send(localSocket , Client_Get , strlen(Client_Get) , 0 );
+            if(strncmp(receiveMessage,FileFound,strlen(FileFound))==0){
+                file = fopen(fileName, "wb");
+            }
+            else if(strncmp(receiveMessage,FileNotFound,strlen(FileNotFound))==0){
+                printf("The ‘%s’ doesn’t exist.\n",fileName);
+                continue;
+            }
+
             int count;
             while((count = read(localSocket,receiveMessage,BUFF_SIZE))>0){
                 if(strncmp(receiveMessage,MyEOF,EOFnum)==0){
@@ -165,6 +177,12 @@ int main(int argc , char *argv[])
             sprintf(ToSend,"%s %s",command,fileName);
             send(localSocket , ToSend , strlen(ToSend) , 0 );
 
+            read(localSocket,receiveMessage,BUFF_SIZE);
+            send(localSocket , Client_Get , strlen(Client_Get) , 0 );
+            if(strncmp(receiveMessage,FileNotFound,strlen(FileNotFound))==0){
+                printf("The ‘%s’ doesn’t exist.\n",fileName);
+                continue;
+            }
             
             int32_t ret;
             char *data = (char*)&ret;
