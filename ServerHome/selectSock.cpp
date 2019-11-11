@@ -181,7 +181,7 @@ int main(int argc , char *argv[])
 			{ 
 				//if position is empty 
 				if( client_socket[i] == 0 ) 
-				{ 
+				{ 	
 					client_socket[i] = new_socket;
 					isClientGetTheLast[i] = 1;
 					printf("Adding to list of sockets as %d\n" , i); 
@@ -208,9 +208,25 @@ int main(int argc , char *argv[])
 						inet_ntoa(address.sin_addr) , ntohs(address.sin_port)); 
 						
 					//Close the socket and mark as 0 in list for reuse 
-					close( sd ); 
+					int shutdownStatus = shutdown( sd , 2);
+					int closeStatus = close( sd );
+					printf("closed sd == %d closeStatus== %d shutdownStatus == %d\n",sd,closeStatus,shutdownStatus);
+					//set it can't be written read
+					FD_CLR( sd , &readfds);
+					FD_CLR( sd , &writefds);
+
 					client_socket[i] = 0;
 					isClientGetTheLast[i] = 0;
+
+					memset(FileName[i],'\0',MaxFileName);
+					memset(bufferPut[i],'\0',MaxResponse); 
+					memset(bufferGet[i],'\0',MaxResponse);
+					isClientGetTheLast[i] = 0;
+					ClientPut[i] = 0;
+					ClientGet[i] = 0;
+					ClientPlay[i] = 0;
+					ClientPutfp[i]= 0;
+					ClientGetfp[i]= 0;
 				} 
 					
 				//Echo back the message that came in 
