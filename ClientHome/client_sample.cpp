@@ -108,18 +108,23 @@ int main(int argc , char *argv[])
             int flagServerGet = 1;
             while(!feof(file)){
                 int NumItems = fread(ToSend,sizeof(char),BUFF_SIZE,file);
-                if(flagServerGet == 1){
-                    int NumSend = send(localSocket , ToSend , NumItems*sizeof(char) , 0 );
-                    printf("Send items %d\n",NumSend);
-                    flagServerGet = 0;
-                    //flagServerGet = 1;
+                if(NumItems == 0){
+                    break;
                 }
-                //sleep(0.1);
-                int Count = read(localSocket,receiveMessage,BUFF_SIZE);
-                receiveMessage[Count] = '\0';
-                printf("rece==%s\n",receiveMessage);
-                if(strcmp(receiveMessage,Server_Get)==0){
-                    flagServerGet = 1;
+                else{
+                    if(flagServerGet == 1){
+                        int NumSend = send(localSocket , ToSend , NumItems*sizeof(char) , 0 );
+                        printf("Send items %d\n",NumSend);
+                        flagServerGet = 0;
+                        //flagServerGet = 1;
+                    }
+                    //sleep(0.1);
+                    int Count = read(localSocket,receiveMessage,BUFF_SIZE);
+                    receiveMessage[Count] = '\0';
+                    printf("rece==%s\n",receiveMessage);
+                    if(strcmp(receiveMessage,Server_Get)==0){
+                        flagServerGet = 1;
+                    }
                 }
             }
             sprintf(ToSend,"%s",MyEOF);
