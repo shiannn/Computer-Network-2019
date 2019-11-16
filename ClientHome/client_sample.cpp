@@ -32,7 +32,7 @@ int main(int argc , char *argv[])
     char InputPort[10]={0};
     int InputPortNumber = -1;
     if(argc == 2){
-        printf("%s\n",argv[1]);
+        fprintf(stderr,"%s\n",argv[1]);
         for(int InputIndex=0;argv[1][InputIndex]!=':';InputIndex++){
             InputIp[InputIndex] = argv[1][InputIndex];
         }
@@ -45,8 +45,8 @@ int main(int argc , char *argv[])
                 }
             }
         }
-        printf("Ip==%s\n",InputIp);
-        printf("Port==%s\n",InputPort);
+        fprintf(stderr,"Ip==%s\n",InputIp);
+        fprintf(stderr,"Port==%s\n",InputPort);
         InputPortNumber = atoi(InputPort);
     }
     else{
@@ -81,7 +81,7 @@ int main(int argc , char *argv[])
     int port=ntohs(getsockaddr.sin_port);
     char dst[100];
     printf("The Client address is %s\n",inet_ntop(AF_INET,&getsockaddr,dst,100));
-    printf("my port is %d\n",port);
+    fprintf(stderr,"my port is %d\n",port);
 
 
     if(err==-1){
@@ -91,7 +91,7 @@ int main(int argc , char *argv[])
     char receiveMessage[BUFF_SIZE] = {};
     while(1){
         // EOF should give greeting message back, too
-        printf("here\n");
+        fprintf(stderr,"here\n");
         char command[10];
         char fileName[MaxFileName];
         char ToSend[BUFF_SIZE];
@@ -100,7 +100,7 @@ int main(int argc , char *argv[])
         char Dummy[MaxFileName];
         fgets(Input, MaxFileName, stdin);
         int retScan = sscanf(Input,"%s%s%s",command,fileName,Dummy);
-        printf("retScan == %d\n",retScan);
+        fprintf(stderr,"retScan == %d\n",retScan);
         if(retScan >= 3){
             printf("Command format error.\n");
             continue;
@@ -115,7 +115,7 @@ int main(int argc , char *argv[])
             //char buffer[1024];
             int count = read(localSocket,receiveMessage,BUFF_SIZE);
             receiveMessage[count] = '\0';
-            printf("receive %s\n",receiveMessage);
+            printf("%s\n",receiveMessage);
             send(localSocket , Client_Get , strlen(Client_Get) , 0 );
         }
         else if(strcmp(command,"put")==0){
@@ -141,21 +141,21 @@ int main(int argc , char *argv[])
                 else{
                     if(flagServerGet == 1){
                         int NumSend = send(localSocket , ToSend , NumItems*sizeof(char) , 0 );
-                        printf("Send items %d\n",NumSend);
+                        fprintf(stderr,"Send items %d\n",NumSend);
                         flagServerGet = 0;
                         //flagServerGet = 1;
                     }
                     //sleep(0.1);
                     int Count = read(localSocket,receiveMessage,BUFF_SIZE);
                     receiveMessage[Count] = '\0';
-                    printf("rece==%s\n",receiveMessage);
+                    fprintf(stderr,"rece==%s\n",receiveMessage);
                     if(strcmp(receiveMessage,Server_Get)==0){
                         flagServerGet = 1;
                     }
                 }
             }
             sprintf(ToSend,"%s",MyEOF);
-            printf("is ToSend EOF %s\n",ToSend);
+            fprintf(stderr,"is ToSend EOF %s\n",ToSend);
             send(localSocket , ToSend , EOFnum , 0 );
             //char buffer[1024];
             //fread the file into buffer
@@ -189,11 +189,11 @@ int main(int argc , char *argv[])
                 }
                 else{
                     send(localSocket , Client_Get , strlen(Client_Get) , 0 );
-                    printf("read count==%d\n",count);
+                    fprintf(stderr,"read count==%d\n",count);
                     fwrite(receiveMessage,sizeof(char),count,file);
                 }
             }
-            printf("get break\n");
+            fprintf(stderr,"get break\n");
             fclose(file);
         }
         else if(strcmp(command,"play")==0){
@@ -226,7 +226,7 @@ int main(int argc , char *argv[])
             send(localSocket , Client_Get , strlen(Client_Get) , 0 );
             int height = ntohl(ret);
             
-            printf("width==%d height==%d\n",width,height);
+            fprintf(stderr,"width==%d height==%d\n",width,height);
             
             //int height = 540;
             //int width = 960;
@@ -244,7 +244,7 @@ int main(int argc , char *argv[])
 
             while(recv(localSocket,VideoImagebuffer,imgSize,MSG_WAITALL)>0){
                 if(memcmp(VideoImagebuffer,EndVideo,EOFnum)==0){
-                    printf("server tell client empty frame\n");
+                    fprintf(stderr,"server tell client empty frame\n");
                     send(localSocket , StopVideo , strlen(StopVideo) , 0 );
                     break;
                 }
@@ -256,7 +256,7 @@ int main(int argc , char *argv[])
                     // waitKey means a delay to get the next frame.
                     char c = (char)waitKey(33.3333);
                     if(c==27){
-                        printf("Client Stop Video %s\n",StopVideo);
+                        fprintf(stderr,"Client Stop Video %s\n",StopVideo);
                         send(localSocket , StopVideo , strlen(StopVideo) , 0 );
                         break;
                     }
@@ -274,7 +274,7 @@ int main(int argc , char *argv[])
             printf("Command not found.\n");
         }
     }
-    printf("close Socket\n");
+    fprintf(stderr,"close Socket\n");
     close(localSocket);
     return 0;
 }
