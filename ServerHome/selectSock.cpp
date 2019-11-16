@@ -21,7 +21,7 @@ using namespace cv;
 	
 #define TRUE 1 
 #define FALSE 0 
-#define PORT 8888 
+//#define PORT 8888 
 
 #define MaxResponse 1024
 #define max_clients 30
@@ -43,6 +43,22 @@ void handle(int arg)
 
 int main(int argc , char *argv[]) 
 {   
+	char InputPort[10]={0};
+    int PORT = -1;
+    if(argc == 2){
+        printf("%s\n",argv[1]);
+        for(int InputIndex=0;argv[1][InputIndex]!='\0';InputIndex++){
+            InputPort[InputIndex] = argv[1][InputIndex];
+        }
+        printf("Port==%s\n",InputPort);
+        //InputPortNumber = atoi(InputPort);
+		PORT = atoi(InputPort);
+    }
+    else{
+        printf("wrong commandline parameter !\n");
+        return 0;
+    }
+
     signal(SIGPIPE, handle);//避免client ctrl+c 時
 	mkdir("serverDir", S_IRWXU);
 	chdir("serverDir");

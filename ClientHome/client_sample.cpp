@@ -27,6 +27,32 @@ using namespace cv;
 using namespace std;
 int main(int argc , char *argv[])
 {
+    //argv[2] ip:port
+    char InputIp[30]={0};
+    char InputPort[10]={0};
+    int InputPortNumber = -1;
+    if(argc == 2){
+        printf("%s\n",argv[1]);
+        for(int InputIndex=0;argv[1][InputIndex]!=':';InputIndex++){
+            InputIp[InputIndex] = argv[1][InputIndex];
+        }
+        int semicol=0;
+        for(int i=0,InputIndex=0;argv[1][InputIndex]!='\0';InputIndex++){
+            if(argv[1][InputIndex]==':')semicol = 1;
+            else{
+                if(semicol==1){
+                    InputPort[i++] = argv[1][InputIndex];
+                }
+            }
+        }
+        printf("Ip==%s\n",InputIp);
+        printf("Port==%s\n",InputPort);
+        InputPortNumber = atoi(InputPort);
+    }
+    else{
+        printf("wrong commandline parameter !\n");
+        return 0;
+    }
 
     int localSocket, recved;
     localSocket = socket(AF_INET , SOCK_STREAM , 0);
@@ -43,8 +69,9 @@ int main(int argc , char *argv[])
     bzero(&info,sizeof(info));
 
     info.sin_family = PF_INET;
-    info.sin_addr.s_addr = inet_addr("127.0.0.1");
-    info.sin_port = htons(8888);
+    //info.sin_addr.s_addr = inet_addr("127.0.0.1");
+    info.sin_addr.s_addr = inet_addr(InputIp);
+    info.sin_port = htons(InputPortNumber);
 
     int err = connect(localSocket,(struct sockaddr *)&info,sizeof(info));
 
