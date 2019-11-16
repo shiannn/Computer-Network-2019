@@ -72,14 +72,19 @@ int main(int argc , char *argv[])
 	char buffer[MaxResponse]; //data buffer of 1K 
 
 	int isClientGetTheLast[max_clients] = {0};
+	int ClientLs[max_clients] = {0};
 	int ClientPut[max_clients] = {0};
 	int ClientGet[max_clients] = {0};
 	int ClientPlay[max_clients] = {0};
 	FILE* ClientPutfp[max_clients]={0};
 	FILE* ClientGetfp[max_clients]={0};
+	struct dirent **entry_list[max_clients];
+	int ClientLsEntry[max_clients] = {0};
+	int ClientLsFileNumber[max_clients] = {0};
 	char FileName[max_clients][MaxFileName];
 	char bufferPut[max_clients][MaxResponse];
 	char bufferGet[max_clients][MaxResponse];
+	char bufferls[max_clients][MaxResponse];
 
 	VideoCapture cap[max_clients];
 	Mat imgServer[max_clients];
@@ -244,12 +249,20 @@ int main(int argc , char *argv[])
 					memset(FileName[i],'\0',MaxFileName);
 					memset(bufferPut[i],'\0',MaxResponse); 
 					memset(bufferGet[i],'\0',MaxResponse);
+					memset(bufferls[i],'\0',MaxResponse);
+					
 					isClientGetTheLast[i] = 0;
 					ClientPut[i] = 0;
 					ClientGet[i] = 0;
 					ClientPlay[i] = 0;
 					ClientPutfp[i]= 0;
 					ClientGetfp[i]= 0;
+
+					ClientLs[i] = 0;
+					entry_list[i] = NULL;
+					ClientLsEntry[i] = 0;
+					ClientLsFileNumber[i] = 0;
+					
 
 					cap[i].release();
 					//imgServer[max_clients];
@@ -295,8 +308,10 @@ int main(int argc , char *argv[])
 						//如果client不是任何服務下 那讀到的就是command
 						if(strncmp(buffer,"ls",2)==0){
 							printf("after Getting\n");
-							struct dirent **entry_list;
-							int FileNumber = scandir(".", &entry_list, 0, alphasort);
+							ClientLs[i] = 1;
+							ClientLsFileNumber[i] = scandir(".", &entry_list[i], 0, alphasort);
+							ClientLsEntry[i] = 0;
+							/*
 							int charNumber = 0;
 							for(int i=0;i<FileNumber;i++){
 								struct dirent *entry = entry_list[i];
@@ -308,6 +323,7 @@ int main(int argc , char *argv[])
 								write(sd, response,strlen(response));
 								isClientGetTheLast[i] = 0;
 							}
+							*/
 						}
 						if(strncmp(buffer,"put",3)==0){
 							//client upload
@@ -389,6 +405,39 @@ int main(int argc , char *argv[])
 				} 
 			}
 			if(FD_ISSET( sd , &writefds)){
+				if(ClientLs[i]==1){
+					if(isClientGetTheLast[i] == 1){
+						if(ClientLsEntry[i] != ClientLsFileNumber[i]){
+							struct dirent *entry = entry_list[i][ClientLsEntry[i]];
+							sprintf(bufferls[i],"%s\n",entry->d_name);
+							write(sd, bufferls[i],strlen(bufferls[i]));
+							isClientGetTheLast[i] = 0;
+
+							ClientLsEntry[i] += 1;
+						}
+						else{
+							sprintf(bufferls[i],"%s",MyEOF);
+							printf("is ToSend EOF %s\n",bufferls[i]);
+							send(sd , bufferls[i] , EOFnum , 0 );
+							ClientLs[i] = 0;
+							ClientLsEntry[i] = 0;
+							isClientGetTheLast[i] = 0;
+						}
+						/*
+						int charNumber = 0;
+						for(int i=ClientLsEntry[i];i<ClientLsFileNumber[i];i++){
+							struct dirent *entry = entry_list[i];
+							//printf("%s\n",entry->d_name);
+							sprintf(&response[charNumber],"%s\n",entry->d_name);
+							charNumber += strlen(entry->d_name)+1;
+						}
+						if(FD_ISSET( sd , &writefds) && isClientGetTheLast[i]==1){
+							write(sd, response,strlen(response));
+							isClientGetTheLast[i] = 0;
+						}
+						*/
+					}
+				}
 				if(ClientGet[i]==1){
 					if(isClientGetTheLast[i] == 1){
 						if(!feof(ClientGetfp[i])){

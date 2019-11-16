@@ -98,6 +98,7 @@ int main(int argc , char *argv[])
         //scanf("%s",command);
         char Input[MaxFileName];
         char Dummy[MaxFileName];
+        printf("please enter command: ");
         fgets(Input, MaxFileName, stdin);
         int retScan = sscanf(Input,"%s%s%s",command,fileName,Dummy);
         fprintf(stderr,"retScan == %d\n",retScan);
@@ -112,11 +113,23 @@ int main(int argc , char *argv[])
             }
             strcpy(ToSend,command);
             send(localSocket , ToSend , strlen(ToSend) , 0 );
-            //char buffer[1024];
-            int count = read(localSocket,receiveMessage,BUFF_SIZE);
-            receiveMessage[count] = '\0';
-            printf("%s\n",receiveMessage);
-            send(localSocket , Client_Get , strlen(Client_Get) , 0 );
+                //char buffer[1024];
+            //int count = read(localSocket,receiveMessage,BUFF_SIZE);
+            //receiveMessage[count] = '\0';
+            //printf("%s\n",receiveMessage);
+            int count;
+            while((count = read(localSocket,receiveMessage,BUFF_SIZE))>0){
+                if(strncmp(receiveMessage,MyEOF,EOFnum)==0){
+                    send(localSocket , Client_Get , strlen(Client_Get) , 0 );
+                    break;
+                }
+                else{
+                    send(localSocket , Client_Get , strlen(Client_Get) , 0 );
+                    fprintf(stderr,"read count==%d\n",count);
+                    fwrite(receiveMessage,sizeof(char),count,stdout);
+                }
+            }
+            //send(localSocket , Client_Get , strlen(Client_Get) , 0 );
         }
         else if(strcmp(command,"put")==0){
             //scanf("%s",fileName);
@@ -125,13 +138,13 @@ int main(int argc , char *argv[])
                 continue;
             }
             sprintf(ToSend,"%s %s",command,fileName);
-            send(localSocket , ToSend , strlen(ToSend) , 0 );
             //printf("ToSend==%s\n",ToSend);
             FILE *file = fopen(fileName, "rb");
             if(file == NULL){
                 printf("The ‘%s’ doesn’t exist\n",fileName);
                 continue;
             }
+            send(localSocket , ToSend , strlen(ToSend) , 0 );
             int flagServerGet = 1;
             while(!feof(file)){
                 int NumItems = fread(ToSend,sizeof(char),BUFF_SIZE,file);
