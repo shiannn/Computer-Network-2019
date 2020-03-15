@@ -37,7 +37,7 @@ using namespace cv;
 
 void handle(int arg)
 {
-    printf("12345\n");
+    fprintf(stderr,"12345\n");
     //return;
 }
 
@@ -46,11 +46,11 @@ int main(int argc , char *argv[])
 	char InputPort[10]={0};
     int PORT = -1;
     if(argc == 2){
-        printf("%s\n",argv[1]);
+        fprintf(stderr,"%s\n",argv[1]);
         for(int InputIndex=0;argv[1][InputIndex]!='\0';InputIndex++){
             InputPort[InputIndex] = argv[1][InputIndex];
         }
-        printf("Port==%s\n",InputPort);
+        fprintf(stderr,"Port==%s\n",InputPort);
         //InputPortNumber = atoi(InputPort);
 		PORT = atoi(InputPort);
     }
@@ -94,7 +94,7 @@ int main(int argc , char *argv[])
 	fd_set writefds;
 		
 	//a message 
-	char *message = "ECHO Daemon v1.0 \r\n"; 
+	//char *message = "ECHO Daemon v1.0 \r\n"; 
 	
 	//initialise all client_socket[] to 0 so not checked 
 	for (i = 0; i < max_clients; i++) 
@@ -129,7 +129,7 @@ int main(int argc , char *argv[])
 		perror("bind failed"); 
 		exit(EXIT_FAILURE); 
 	} 
-	printf("Listener on port %d \n", PORT); 
+	fprintf(stderr,"Listener on port %d \n", PORT); 
 		
 	//try to specify maximum of 3 pending connections for the master socket 
 	if (listen(master_socket, 3) < 0) 
@@ -278,7 +278,7 @@ int main(int argc , char *argv[])
 					//1.greeting message 2.command  3.data 4.Stop Video
 					if(strncmp(buffer,StopVideo,strlen(StopVideo))==0){
 						//stop video
-						printf("server stop video\n");
+						fprintf(stderr,"server stop video\n");
 						ClientPlay[i] = 0;
 						cap[i].release();
 						isClientGetTheLast[i] = 1;
@@ -293,13 +293,13 @@ int main(int argc , char *argv[])
 						int count = valread;
 						memcpy(bufferPut[i],buffer,count);
 						if(strncmp(bufferPut[i],MyEOF,EOFnum)==0){
-							printf("the client .jpg EOF\n");
+							fprintf(stderr,"the client .jpg EOF\n");
 							ClientPut[i] = 0;
 							fclose(ClientPutfp[i]);
 							continue;
 						}
 						send(sd , Server_Get , strlen(Server_Get) , 0 );
-						printf("read count==%d\n",count);
+						fprintf(stderr,"read count==%d\n",count);
 						fwrite(bufferPut[i],sizeof(char),count,ClientPutfp[i]);
 					}
 					else{
@@ -307,7 +307,7 @@ int main(int argc , char *argv[])
                     	char response[MaxResponse];
 						//如果client不是任何服務下 那讀到的就是command
 						if(strncmp(buffer,"ls",2)==0){
-							printf("after Getting\n");
+							fprintf(stderr,"after Getting\n");
 							ClientLs[i] = 1;
 							ClientLsFileNumber[i] = scandir(".", &entry_list[i], 0, alphasort);
 							ClientLsEntry[i] = 0;
@@ -330,7 +330,7 @@ int main(int argc , char *argv[])
 							char commandDummy[MaxCommand];
 							
 							sscanf(buffer,"%s%s",commandDummy,FileName[i]);
-							printf("commandDummu==%s FileName==%s\n",commandDummy,FileName[i]);
+							fprintf(stderr,"commandDummu==%s FileName==%s\n",commandDummy,FileName[i]);
 							ClientPut[i] = 1;
 							ClientPutfp[i] = fopen(FileName[i], "wb");
 						}
@@ -338,7 +338,7 @@ int main(int argc , char *argv[])
 							//client download
 							char commandDummy[MaxCommand];
 							sscanf(buffer,"%s%s",commandDummy,FileName[i]);
-							printf("commandDummu==%s FileName==%s\n",commandDummy,FileName[i]);
+							fprintf(stderr,"commandDummu==%s FileName==%s\n",commandDummy,FileName[i]);
 
 							ClientGetfp[i] = fopen(FileName[i], "rb");
 							if(ClientGetfp[i] == NULL){
@@ -357,12 +357,12 @@ int main(int argc , char *argv[])
 							//client play
 							char commandDummy[MaxCommand];
 							sscanf(buffer,"%s%s",commandDummy,FileName[i]);
-							printf("commandDummu==%s FileName==%s\n",commandDummy,FileName[i]);
+							fprintf(stderr,"commandDummu==%s FileName==%s\n",commandDummy,FileName[i]);
 
 							//需要一個array for cap
 							//VideoCapture cap(FileName);
 							bool VideoOpen = cap[i].open(FileName[i]);
-							printf("VideoOpen == %d\n",VideoOpen);
+							fprintf(stderr,"VideoOpen == %d\n",VideoOpen);
 							if(VideoOpen == false){
 								char NotFound[] = FileNotFound;
 								write(sd, NotFound,strlen(NotFound));
@@ -398,7 +398,7 @@ int main(int argc , char *argv[])
 								write(sd,dataPtr,sizeof(conv));
 								Count = read(sd,buffer,MaxResponse);
 								buffer[0] = '\0';
-								cout << "Video disappear" << endl;
+								//cout << "Video disappear" << endl;
 							}
 						}
 					}
@@ -417,7 +417,7 @@ int main(int argc , char *argv[])
 						}
 						else{
 							sprintf(bufferls[i],"%s",MyEOF);
-							printf("is ToSend EOF %s\n",bufferls[i]);
+							fprintf(stderr,"is ToSend EOF %s\n",bufferls[i]);
 							send(sd , bufferls[i] , EOFnum , 0 );
 							ClientLs[i] = 0;
 							ClientLsEntry[i] = 0;
@@ -443,17 +443,17 @@ int main(int argc , char *argv[])
 						if(!feof(ClientGetfp[i])){
 							//give file content
 							int NumItems = fread(bufferGet[i],sizeof(char),MaxResponse,ClientGetfp[i]);
-							printf("fread items %d\n",NumItems);
+							fprintf(stderr,"fread items %d\n",NumItems);
 							if(NumItems != 0){
 								int NumSend = send(sd , bufferGet[i] , NumItems*sizeof(char) , 0 );
-								printf("Send items %d\n",NumSend);
+								fprintf(stderr,"Send items %d\n",NumSend);
 								isClientGetTheLast[i] = 0;
 							}
 						}
 						else{
 							//give EOF
 							sprintf(bufferGet[i],"%s",MyEOF);
-							printf("is ToSend EOF %s\n",bufferGet[i]);
+							fprintf(stderr,"is ToSend EOF %s\n",bufferGet[i]);
 							send(sd , bufferGet[i] , EOFnum , 0 );
 							ClientGet[i] = 0;
 							fclose(ClientGetfp[i]);
@@ -478,7 +478,7 @@ int main(int argc , char *argv[])
 						int imgSize = width*height*3;
 						uchar VideoImagebuffer[imgSize];
 						if(imgServer[i].empty()){
-							printf("imgsize == %d\n",imgSize);
+							fprintf(stderr,"imgsize == %d\n",imgSize);
 							memcpy(VideoImagebuffer,"@@@@@@", 6);
 							send(sd , VideoImagebuffer , imgSize , 0 );
 						}
